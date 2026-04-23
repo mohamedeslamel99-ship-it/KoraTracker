@@ -1,7 +1,7 @@
 const BASE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/api/football` : '/api/football';
 
 // سحب المفتاح السري من بيئة العمل
-const API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY;
+const API_KEY = import.meta.env.VITE_FOOTBALL_DATA_API_KEY;
 
 export async function fetchFootballData(endpoint: string, retries = 0): Promise<any> {
   const MAX_RETRIES = 2;
