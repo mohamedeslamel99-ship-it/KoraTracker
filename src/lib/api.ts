@@ -1,11 +1,21 @@
 const BASE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/api/football` : '/api/football';
 
+// سحب المفتاح السري من بيئة العمل
+const API_KEY = import.meta.env.VITE_FOOTBALL_API_KEY;
+
 export async function fetchFootballData(endpoint: string, retries = 0): Promise<any> {
   const MAX_RETRIES = 2;
   let response: Response | undefined;
+  
   try {
     const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint}`;
-    response = await fetch(url);
+    
+    // إضافة الـ Headers اللي فيها المفتاح السري
+    response = await fetch(url, {
+      headers: {
+        'X-Auth-Token': API_KEY || '', // لو المفتاح مش موجود هيبعت فاضي عشان الكود ما يضربش
+      }
+    });
     
     // Automatic exponential backoff for rate limits (429)
     if (response.status === 429 && retries < MAX_RETRIES) {
