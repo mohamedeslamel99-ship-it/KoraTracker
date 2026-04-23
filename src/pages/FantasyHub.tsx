@@ -5,6 +5,8 @@ import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, L
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Skeleton } from '../components/Skeleton';
+// 👇 استيراد مُولد التشكيلة الجديد
+import SquadBuilder from '../components/SquadBuilder';
 
 export default function FantasyHub() {
   const [search, setSearch] = useState('');
@@ -111,7 +113,7 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term || term.length < 2) {
-      setSearchResults([]);
+      searchResults([]);
       return;
     }
     const results = allPlayers.filter(p => 
@@ -520,6 +522,16 @@ export default function FantasyHub() {
            )}
         </div>
       </section>
+
+      {/* 👇 القسم الجديد: مُولد التشكيلة (Squad Builder) 👇 */}
+      <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
+         <div className="text-center mb-8">
+            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
+            <p className="text-xs font-black text-zinc-500 uppercase tracking-widest mt-2">Build, Download, and Share with Friends</p>
+         </div>
+         <SquadBuilder />
+      </section>
+      {/* 👆 نهاية القسم الجديد 👆 */}
 
       {/* Discovery Section */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
