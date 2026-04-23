@@ -10,7 +10,9 @@ export default function SquadBuilder() {
     try {
       const canvas = await html2canvas(squadRef.current, {
         useCORS: true,
-        backgroundColor: '#15803d', // لون أخضر صريح
+        backgroundColor: '#15803d', 
+        scale: 2, // عشان الصورة تطلع جودتها عالية
+        logging: false, // عشان مايملاليش الـ console
       });
       
       const image = canvas.toDataURL('image/png');
@@ -25,48 +27,60 @@ export default function SquadBuilder() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6 mt-10 w-full">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', marginTop: '40px', width: '100%' }}>
       
-      {/* Pitch Area - شيلنا ألوان Tailwind واستخدمنا Inline Styles */}
+      {/* Pitch Area (مفيش ولا كلاس Tailwind هنا خالص) */}
       <div 
         ref={squadRef} 
-        className="w-full max-w-[350px] h-[500px] rounded-lg relative p-4 flex flex-col justify-between border-4 shadow-xl"
-        style={{ backgroundColor: '#15803d', borderColor: '#ffffff' }}
+        style={{
+          width: '100%',
+          maxWidth: '350px',
+          height: '500px',
+          backgroundColor: '#15803d',
+          borderRadius: '8px',
+          position: 'relative',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          border: '4px solid #ffffff',
+          boxSizing: 'border-box'
+        }}
       >
         {/* Watermark */}
-        <div className="absolute top-2 left-2 text-sm font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>
+        <div style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', color: 'rgba(255,255,255,0.5)' }}>
           KORATRACKER.COM
         </div>
 
-        {/* Attackers (Example: Salah) */}
-        <div className="flex justify-center mt-8 relative z-10">
-            <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mb-1 border-2 shadow-md" style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#facc15' }}>
+        {/* Attackers */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px', position: 'relative', zIndex: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px', backgroundColor: '#ffffff', color: '#000000', border: '2px solid #facc15' }}>
                   C
                 </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Salah</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Salah</span>
             </div>
         </div>
 
-        {/* Midfielders (Example: Marmoush & Haaland) */}
-        <div className="flex justify-around mb-12 relative z-10">
-             <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mb-1 shadow-md" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+        {/* Midfielders */}
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '48px', position: 'relative', zIndex: 10 }}>
+             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px', backgroundColor: '#ffffff', color: '#000000' }}>
                   V
                 </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Marmoush</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Marmoush</span>
              </div>
-             <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs mb-1 shadow-md" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px', backgroundColor: '#ffffff', color: '#000000' }}>
                   9
                 </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Haaland</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.8)', color: '#ffffff' }}>Haaland</span>
              </div>
         </div>
         
-        {/* خط النص بتاع الملعب كديكور */}
-        <div className="absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2" style={{ backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ borderColor: 'rgba(255,255,255,0.3)' }}></div>
+        {/* Pitch Lines */}
+        <div style={{ position: 'absolute', top: '50%', left: '0', width: '100%', height: '2px', backgroundColor: 'rgba(255,255,255,0.3)', transform: 'translateY(-50%)' }}></div>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', width: '96px', height: '96px', border: '2px solid rgba(255,255,255,0.3)', borderRadius: '50%', transform: 'translate(-50%, -50%)', boxSizing: 'border-box' }}></div>
       </div>
 
       {/* Download Button */}
