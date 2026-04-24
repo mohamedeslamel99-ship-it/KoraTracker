@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-// 👇 ضفنا الأيقونات الجديدة بتاعت الـ AI 👇
-import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle } from 'lucide-react';
+// 👇 ضفنا أيقونة CalendarDays عشان قسم الجولات 👇
+import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Skeleton } from '../components/Skeleton';
@@ -18,7 +18,6 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
-  // 👇 States للـ AI Report 👇
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiReport, setAiReport] = useState<any>(null);
 
@@ -47,11 +46,9 @@ export default function FantasyHub() {
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
 
-  // 👇 خوارزمية الذكاء الاصطناعي لحساب القوة 👇
   const generateAIReport = () => {
     const activePlayers = squad.filter(p => p !== null);
     
-    // لازم 11 لاعب عشان ندي تقييم واقعي
     if (activePlayers.length < 11) {
       alert("⚠️ لازم تختار 11 لاعب على الأقل (التشكيلة الأساسية) عشان الذكاء الاصطناعي يحلل فريقك!");
       return;
@@ -59,13 +56,11 @@ export default function FantasyHub() {
 
     setIsGeneratingAI(true);
 
-    // تأخير وهمي عشان يحسس اليوزر بالذكاء الاصطناعي
     setTimeout(() => {
       let score = 50; 
       let strengths: string[] = [];
       let weaknesses: string[] = [];
 
-      // 1. تقييم الكابتن
       const captain = squad.find(p => p && p.id === captainId);
       if (captain) {
         if (parseFloat(captain.form || 0) >= 5 || parseFloat(captain.points || 0) > 80) {
@@ -77,25 +72,20 @@ export default function FantasyHub() {
         score -= 10; weaknesses.push("نسيت تختار كابتن للفريق! الكابتن بيضاعف النقط.");
       }
 
-      // 2. تقييم حالة الفريق (Form)
       const avgForm = activePlayers.reduce((sum, p) => sum + parseFloat(p.form || 0), 0) / activePlayers.length;
       if (avgForm >= 5.5) { score += 20; strengths.push("حالة اللاعبين (Form) مرعبة الجولة دي والفريق جاهز يحصد نقط."); }
       else if (avgForm >= 3.5) { score += 10; strengths.push("أغلب اللاعبين مستواهم مستقر وجاهزين."); }
       else { score -= 10; weaknesses.push("مستوى بعض اللعيبة متراجع، محتاج تفكر في تغييرات (Transfers)."); }
 
-      // 3. تقييم دكة البدلاء
       if (activePlayers.length === 15) { score += 10; strengths.push("دكة البدلاء مكتملة وتأمنك ضد الإصابات أو المداورة."); }
       else { score -= 5; weaknesses.push("دكة البدلاء غير مكتملة، وده ممكن يكلفك نقط لو لاعب أساسي غاب."); }
 
-      // 4. تقييم الميزانية
       const budgetNum = parseFloat(totalBudget);
       if (budgetNum >= 95) { score += 5; strengths.push("استغلال ممتاز جداً للميزانية المتاحة ليك."); }
       else if (budgetNum < 85) { weaknesses.push("ميزانيتك المهدرة كبيرة، ممكن تبيع لاعب رخيص وتجيب نجم (Premium)."); }
 
-      // تظبيط النتيجة النهائية من 10 لـ 99
       score = Math.min(Math.max(Math.round(score), 10), 99); 
 
-      // تلوين النتيجة حسب القوة
       let ratingColor = "text-emerald-400";
       let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
       if (score < 65) { ratingColor = "text-red-400"; ratingBg = "bg-red-500/10 border-red-500/30"; }
@@ -107,6 +97,12 @@ export default function FantasyHub() {
   };
 
   const addToSquad = (player: any) => {
+    // 👇 فلتر حماية: التشكيلة للدوري الإنجليزي فقط 👇
+    if (player.league && player.league !== 'PL') {
+      alert(`❌ عذراً! (${player.name}) بيلعب في دوري تاني. مسموح بوضع لاعبي الدوري الإنجليزي فقط في التشكيلة.`);
+      return;
+    }
+
     if (squad.some(p => p?.id === player.id)) {
       alert("اللاعب ده موجود في التشكيلة فعلاً!");
       return;
@@ -214,6 +210,7 @@ export default function FantasyHub() {
         if (p?.id) {
           uniqueMap.set(p.id, {
             ...p,
+            league: 'PL', // 👈 أضفنا دوري هنا
             goals: p.goals || 0,
             assists: p.assists ?? 0,
             appearances: p.appearances ?? 0,
@@ -227,16 +224,17 @@ export default function FantasyHub() {
       });
 
       const combined = [
-        ...(plScorers?.scorers || []),
-        ...(llScorers?.scorers || []),
-        ...(saScorers?.scorers || []),
-        ...(blScorers?.scorers || [])
+        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})), // 👈 بنحدد دوري كل هداف
+        ...(llScorers?.scorers || []).map((s:any) => ({...s, league: 'PD'})),
+        ...(saScorers?.scorers || []).map((s:any) => ({...s, league: 'SA'})),
+        ...(blScorers?.scorers || []).map((s:any) => ({...s, league: 'BL1'}))
       ];
       
       combined.forEach(s => {
         if (s?.player?.id) {
           uniqueMap.set(s.player.id, {
             ...s.player,
+            league: s.league, // 👈 بنحفظ اسم الدوري
             team: s.team || { name: 'Unknown' },
             goals: s.goals || 0,
             assists: s.assists ?? Math.floor(Math.random() * 5),
@@ -293,6 +291,7 @@ export default function FantasyHub() {
             if (data?.squad) {
               const teamSquad = data.squad.map((p: any) => ({
                 ...p,
+                league: 'PL', // 👈 بنحدد إن دول لعيبة إنجليزي
                 team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName },
                 goals: Math.floor(Math.random() * 5),
                 assists: Math.floor(Math.random() * 5),
@@ -556,16 +555,10 @@ export default function FantasyHub() {
                    </div>
                     
                    <div className="flex gap-2 w-full">
-                     <button
-                       onClick={() => addToComparison(activePlayer)}
-                       className="flex-1 h-12 rounded-xl bg-indigo-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
-                     >
+                     <button onClick={() => addToComparison(activePlayer)} className="flex-1 h-12 rounded-xl bg-indigo-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
                        <Scale size={14} /> Compare
                      </button>
-                     <button
-                       onClick={() => addToSquad(activePlayer)}
-                       className="flex-1 h-12 rounded-xl bg-emerald-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
-                     >
+                     <button onClick={() => addToSquad(activePlayer)} className="flex-1 h-12 rounded-xl bg-emerald-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
                        <Plus size={14} /> Add to Squad
                      </button>
                    </div>
@@ -638,7 +631,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* استدعاء الـ SquadBuilder */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
          <div className="text-center mb-8">
             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
@@ -657,7 +649,52 @@ export default function FantasyHub() {
          />
       </section>
 
-      <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
+      {/* 👇 القسم الجديد: مواجهات الجولات (Gameweeks) المبدئي 👇 */}
+      <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden mt-8">
+         <div className="flex items-center gap-4 mb-8 border-b border-zinc-800 pb-6">
+            <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+               <CalendarDays size={24} />
+            </div>
+            <div>
+               <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Premier League Fixtures</h2>
+               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-1">Upcoming Gameweeks Tracker</p>
+            </div>
+         </div>
+         
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             {[1, 2, 3].map((gw) => (
+                 <div key={gw} className="bg-zinc-900/50 border border-zinc-800/80 hover:border-indigo-500/50 transition-colors rounded-3xl p-6 relative overflow-hidden">
+                     <div className="absolute top-0 right-0 p-4 opacity-5"><CalendarDays size={60} /></div>
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Gameweek {gw}</h3>
+                        <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded">Upcoming</span>
+                     </div>
+                     <div className="space-y-3">
+                         {/* مباريات ديمو (هتتربط بالـ API الخطوة الجاية) */}
+                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">ARS</span>
+                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">MCI</span>
+                         </div>
+                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">LIV</span>
+                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">CHE</span>
+                         </div>
+                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">MUN</span>
+                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
+                             <span className="text-xs font-bold text-white uppercase w-12 text-center">TOT</span>
+                         </div>
+                     </div>
+                     <button className="w-full mt-4 py-2 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[9px] font-black text-zinc-400 uppercase tracking-widest transition-all">View Full Matchday</button>
+                 </div>
+             ))}
+         </div>
+      </section>
+      {/* 👆 نهاية قسم الجولات 👆 */}
+
+      <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-12 border border-zinc-800 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute bottom-0 right-0 p-12 pointer-events-none opacity-[0.03] text-white"><Trophy size={300} strokeWidth={1} /></div>
          <div className="relative">
             <div className="flex items-center gap-3 mb-12">
@@ -710,7 +747,7 @@ export default function FantasyHub() {
               <div className="flex-1 flex justify-center gap-3">
                 {selectedPlayers.map(p => (
                   <motion.div key={p.id} layoutId={`comp-${p.id}`} className="relative px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-3 group">
-                    <img src={p.team.crest} alt={`${p.team.name} crest`} className="h-4 w-4 object-contain" referrerPolicy="no-referrer" />
+                    <img src={p.team.crest} alt={`${p.team.name} crest`} className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                     <span className="text-[10px] font-black text-zinc-300 uppercase tracking-tight">{p.name}</span>
                     <button onClick={() => removePlayer(p.id)} className="text-zinc-600 hover:text-red-500 transition-colors"><X size={10} /></button>
                   </motion.div>
@@ -731,13 +768,11 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* نافذة المقارنة (نفس الكود القديم) */}
       <AnimatePresence>
         {isComparisonOpen && selectedPlayers.length === 2 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsComparisonOpen(false)} className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-zoom-out" />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 40 }} className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[3rem] border border-zinc-800 bg-[#09090b] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5 flex flex-col">
-               {/* محتوى الـ Comparison Modal زيه بالضبط محذفتش حاجة */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-10 py-6 sm:py-8 border-b border-zinc-900 bg-[#111113]/50 gap-4">
                 <div className="flex items-center gap-4">
                    <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0"><BarChart3 size={20} /></div>
@@ -777,76 +812,34 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* 👇 النافذة الجديدة السحرية للـ AI Report 👇 */}
       <AnimatePresence>
         {aiReport && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setAiReport(null)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-zoom-out"
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-zinc-800 bg-[#09090b] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5 flex flex-col p-8"
-            >
-              <button onClick={() => setAiReport(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
-
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAiReport(null)} className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-zoom-out" />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 40 }} className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-zinc-800 bg-[#09090b] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5 flex flex-col p-8">
+              <button onClick={() => setAiReport(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-400 mb-4 shadow-lg shadow-indigo-500/20">
-                  <BrainCircuit size={32} />
-                </div>
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-400 mb-4 shadow-lg shadow-indigo-500/20"><BrainCircuit size={32} /></div>
                 <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">AI Squad Analysis</h2>
                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Powered by KoraTracker Engine</p>
               </div>
-
               <div className={`flex flex-col items-center justify-center py-8 rounded-3xl border ${aiReport.ratingBg} mb-8`}>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 text-zinc-400">Squad Score</span>
-                <div className={`text-7xl font-black tabular-nums tracking-tighter ${aiReport.ratingColor}`}>
-                  {aiReport.score}<span className="text-3xl opacity-50">%</span>
-                </div>
+                <div className={`text-7xl font-black tabular-nums tracking-tighter ${aiReport.ratingColor}`}>{aiReport.score}<span className="text-3xl opacity-50">%</span></div>
               </div>
-
               <div className="space-y-6">
                 <div>
-                  <h3 className="flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-widest mb-3">
-                    <CheckCircle2 size={16} /> Strengths
-                  </h3>
-                  <ul className="space-y-2">
-                    {aiReport.strengths.map((str: string, i: number) => (
-                      <li key={i} className="text-sm font-bold text-zinc-300 flex items-start gap-2">
-                        <span className="text-emerald-500 mt-1">•</span> {str}
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="flex items-center gap-2 text-xs font-black text-emerald-400 uppercase tracking-widest mb-3"><CheckCircle2 size={16} /> Strengths</h3>
+                  <ul className="space-y-2">{aiReport.strengths.map((str: string, i: number) => (<li key={i} className="text-sm font-bold text-zinc-300 flex items-start gap-2"><span className="text-emerald-500 mt-1">•</span> {str}</li>))}</ul>
                 </div>
-
                 {aiReport.weaknesses.length > 0 && (
                   <div>
-                    <h3 className="flex items-center gap-2 text-xs font-black text-red-400 uppercase tracking-widest mb-3">
-                      <AlertTriangle size={16} /> Areas to Improve
-                    </h3>
-                    <ul className="space-y-2">
-                      {aiReport.weaknesses.map((wk: string, i: number) => (
-                        <li key={i} className="text-sm font-bold text-zinc-300 flex items-start gap-2">
-                          <span className="text-red-500 mt-1">•</span> {wk}
-                        </li>
-                      ))}
-                    </ul>
+                    <h3 className="flex items-center gap-2 text-xs font-black text-red-400 uppercase tracking-widest mb-3"><AlertTriangle size={16} /> Areas to Improve</h3>
+                    <ul className="space-y-2">{aiReport.weaknesses.map((wk: string, i: number) => (<li key={i} className="text-sm font-bold text-zinc-300 flex items-start gap-2"><span className="text-red-500 mt-1">•</span> {wk}</li>))}</ul>
                   </div>
                 )}
               </div>
-
-              <button onClick={() => setAiReport(null)} className="mt-10 w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 rounded-xl transition-all active:scale-95 uppercase text-xs tracking-widest border border-zinc-800">
-                Continue Building
-              </button>
+              <button onClick={() => setAiReport(null)} className="mt-10 w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 rounded-xl transition-all active:scale-95 uppercase text-xs tracking-widest border border-zinc-800">Continue Building</button>
             </motion.div>
           </div>
         )}
@@ -858,14 +851,11 @@ export default function FantasyHub() {
 function ComparisonStatSection({ label, val1, val2, suffix = '', prefix = '', invert = false }: any) {
   const v1 = parseFloat(String(val1 ?? '0').replace(prefix, '').replace(suffix, '')) || 0;
   const v2 = parseFloat(String(val2 ?? '0').replace(prefix, '').replace(suffix, '')) || 0;
-  
   const total = Math.max(v1 + v2, 1);
   const p1 = (v1 / total) * 100;
   const p2 = (v2 / total) * 100;
-
   const isBetter1 = invert ? v1 < v2 : v1 > v2;
   const isBetter2 = invert ? v2 < v1 : v2 > v1;
-
   const rowVariants = { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } };
 
   return (
