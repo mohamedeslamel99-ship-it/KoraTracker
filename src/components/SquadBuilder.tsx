@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { X } from 'lucide-react'; // ضفنا أيقونة الحذف
+import { X, Shirt } from 'lucide-react'; // ضفنا أيقونة التيشيرت
 
 export default function SquadBuilder({ squad, onRemovePlayer }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
@@ -23,27 +23,41 @@ export default function SquadBuilder({ squad, onRemovePlayer }: any) {
   };
 
   const PlayerSlot = ({ player, index, isBench = false }: any) => (
-    <div className="flex flex-col items-center w-16 relative group cursor-pointer">
-      {/* زرار الحذف بيظهر لما تقف بالماوس */}
+    <div className="flex flex-col items-center w-16 relative group cursor-pointer mt-2">
+      
+      {/* زرار الحذف */}
       {player && (
         <button 
           onClick={() => onRemovePlayer(index)}
-          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-30 hover:bg-red-600"
+          className="absolute -top-3 -right-2 w-5 h-5 bg-red-500 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-30 hover:bg-red-600"
         >
           <X size={12} strokeWidth={3} />
         </button>
       )}
       
-      <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-[10px] shadow-lg mb-1 transition-all group-hover:scale-110
-        ${player ? 'bg-white text-black border-yellow-400' : 'bg-green-800/40 border-dashed border-white/30 text-white/30'}`}>
+      {/* شكل اللاعب (تيشيرت أو مكان فارغ) */}
+      <div className={`w-10 h-10 flex items-center justify-center mb-1 transition-all group-hover:scale-110 relative
+        ${!player && 'rounded-full bg-green-800/40 border-2 border-dashed border-white/30 text-white/30'}`}>
         {player ? (
-           <img src={player.team.crest} className="w-6 h-6 object-contain" alt="" crossOrigin="anonymous" />
+           <div className="relative flex flex-col items-center">
+              {/* أيقونة التيشيرت */}
+              <Shirt size={38} className="text-white fill-white drop-shadow-md" />
+              
+              {/* لوجو الفريق صغير تحت التيشيرت (استخدمنا no-referrer عشان مايتكسرش) */}
+              {player.team?.crest && (
+                <div className="absolute -bottom-1 -right-2 bg-white rounded-full p-[2px] shadow-sm flex items-center justify-center">
+                   <img src={player.team.crest} className="w-3 h-3 object-contain" alt="" referrerPolicy="no-referrer" />
+                </div>
+              )}
+           </div>
         ) : (
-           index + 1
+           <span className="font-bold text-[10px]">{index + 1}</span>
         )}
       </div>
-      <span className={`text-[8px] font-bold px-1 py-0.5 rounded min-w-[50px] text-center truncate shadow-md
-        ${player ? 'bg-black/80 text-white' : 'bg-black/20 text-white/50'}`}>
+
+      {/* اسم اللاعب بستايل الفانتازي الرسمي */}
+      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded min-w-[55px] max-w-[70px] text-center truncate shadow-md mt-1
+        ${player ? 'bg-[#37003c] text-white border border-[#00ff87]' : 'bg-black/20 text-white/50'}`}>
         {player ? player.name : 'فارغ'}
       </span>
     </div>
@@ -80,7 +94,7 @@ export default function SquadBuilder({ squad, onRemovePlayer }: any) {
         </div>
 
         {/* Bench (4) */}
-        <div className="mt-auto pt-4 border-t border-white/20 bg-green-900/40 -mx-6 px-6 flex justify-between items-center h-24">
+        <div className="mt-auto pt-4 border-t border-white/20 bg-green-900/40 -mx-6 px-6 flex justify-between items-center h-24 relative z-20">
           {[11, 12, 13, 14].map(i => <PlayerSlot key={i} index={i} player={squad[i]} isBench />)}
         </div>
 
