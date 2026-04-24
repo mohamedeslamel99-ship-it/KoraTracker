@@ -17,18 +17,40 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
-  // State الملعب
-  const [squad, setSquad] = useState<any[]>(Array(15).fill(null));
+  // 👇 الحفظ التلقائي للتشكيلة والميزانية والكابتن 👇
+  const [squad, setSquad] = useState<any[]>(() => {
+    const saved = localStorage.getItem('kt_saved_squad');
+    return saved ? JSON.parse(saved) : Array(15).fill(null);
+  });
+  
+  const [captainId, setCaptainId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('kt_captain');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  // 👇 العقل المدبر المُحدث (قانون الـ 3 لعيبة + تظبيط المراكز) 👇
+  const [viceCaptainId, setViceCaptainId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('kt_vice_captain');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // حساب الميزانية
+  const totalBudget = useMemo(() => {
+    return squad.reduce((sum, p) => sum + (p ? parseFloat(p.price || 0) : 0), 0).toFixed(1);
+  }, [squad]);
+
+  // تفعيل الحفظ التلقائي مع كل تغييرة
+  useEffect(() => {
+    localStorage.setItem('kt_saved_squad', JSON.stringify(squad));
+    localStorage.setItem('kt_captain', JSON.stringify(captainId));
+    localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
+  }, [squad, captainId, viceCaptainId]);
+
   const addToSquad = (player: any) => {
-    // 1. هل اللاعب موجود أصلاً؟
     if (squad.some(p => p?.id === player.id)) {
       alert("اللاعب ده موجود في التشكيلة فعلاً!");
       return;
     }
 
-    // 2. قانون الـ 3 لاعبين من نفس الفريق
     const teamId = player.team?.id;
     const sameTeamCount = squad.filter(p => p !== null && p.team?.id === teamId).length;
     if (sameTeamCount >= 3) {
@@ -36,12 +58,10 @@ export default function FantasyHub() {
       return;
     }
 
-    // 3. تحديد المركز الذكي
     let targetRange: number[] = [];
     const pos = (player.position || '').toLowerCase();
     const name = (player.name || '').toLowerCase();
 
-    // قائمة أشهر لعيبة الوسط في الفانتازي
     const isFplMid = pos.includes('midfield') || pos.includes('wing') || pos === 'mf' || 
                      ['salah', 'saka', 'foden', 'gordon', 'palmer', 'son', 'diaz', 'mbeumo', 'bowen', 'sterling', 'eze'].some(n => name.includes(n));
     const isDef = pos.includes('defen') || pos.includes('back') || pos === 'df';
@@ -52,7 +72,7 @@ export default function FantasyHub() {
       targetRange = [10];
     } else if (isDef) {
       targetRange = [6, 7, 8, 9];
-    } else if (isFplMid) { // بنفحص الوسط قبل الهجوم عشان نصطاد الأجنحة
+    } else if (isFplMid) { 
       targetRange = [2, 3, 4, 5];
     } else if (isFwd) {
       targetRange = [0, 1];
@@ -60,7 +80,6 @@ export default function FantasyHub() {
       targetRange = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
     }
 
-    // 4. التسكين في الملعب أو الدكة
     let targetIndex = targetRange.find(idx => squad[idx] === null);
 
     if (targetIndex === undefined) {
@@ -76,14 +95,21 @@ export default function FantasyHub() {
     const newSquad = [...squad];
     newSquad[targetIndex] = player;
     setSquad(newSquad);
+    
+    // لو هو أول لاعب في التشكيلة، خليه الكابتن أوتوماتيك
+    if (!captainId) setCaptainId(player.id);
   };
 
-  const removeFromSquad = (index: number) => {
+  const removeFromSquad = (index: number, playerId: number) => {
     const newSquad = [...squad];
     newSquad[index] = null;
     setSquad(newSquad);
+    
+    // لو مسحنا الكابتن، نشيل الشارة منه
+    if (captainId === playerId) setCaptainId(null);
+    if (viceCaptainId === playerId) setViceCaptainId(null);
   };
-  // 👆 نهاية العقل المدبر 👆
+  // 👆 نهاية تحديثات التشكيلة 👆
 
   const handleShare = () => {
     if (selectedPlayers.length !== 2) return;
@@ -593,12 +619,21 @@ export default function FantasyHub() {
         </div>
       </section>
 
+      {/* 👇 استدعاء الملعب وتمرير كل البيانات الجديدة ليه 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
          <div className="text-center mb-8">
             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
             <p className="text-xs font-black text-zinc-500 uppercase tracking-widest mt-2">Build, Download, and Share with Friends</p>
          </div>
-         <SquadBuilder squad={squad} onRemovePlayer={removeFromSquad} />
+         <SquadBuilder 
+            squad={squad} 
+            onRemovePlayer={removeFromSquad} 
+            totalBudget={totalBudget}
+            captainId={captainId}
+            viceCaptainId={viceCaptainId}
+            setCaptain={setCaptainId}
+            setViceCaptain={setViceCaptainId}
+         />
       </section>
 
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
@@ -685,7 +720,7 @@ export default function FantasyHub() {
                     layoutId={`comp-${p.id}`}
                     className="relative px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-3 group"
                   >
-                    <img src={p.team.crest} alt={`${p.team.name} crest`} className="h-4 w-4 object-contain" referrerPolicy="no-referrer" />
+                    <img src={p.team.crest} alt={`${p.team.name} crest`} className="h-full w-full object-contain" referrerPolicy="no-referrer" />
                     <span className="text-[10px] font-black text-zinc-300 uppercase tracking-tight">{p.name}</span>
                     <button
                       onClick={() => removePlayer(p.id)}
