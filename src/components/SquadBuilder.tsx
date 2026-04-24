@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Shirt, Crown, Sparkles, Loader2 } from 'lucide-react';
+import { X, Shirt, Crown, Sparkles, Loader2, Flame } from 'lucide-react';
 
-export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI, onSelectPlayer }: any) {
+export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI, onSelectPlayer, onRoastSquad, isRoasting }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
 
   const downloadImage = async () => {
@@ -20,7 +20,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
 
   const PlayerSlot = ({ player, index, isBench = false }: any) => (
     <div className="flex flex-col items-center w-16 relative group mt-2">
-      {/* زراير التحكم (كابتن، نائب، حذف) */}
       {player && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30 bg-black/80 p-1 rounded-full border border-white/10 shadow-2xl">
           <button onClick={(e) => { e.stopPropagation(); setCaptain(player.id); }} className="w-5 h-5 bg-yellow-500 rounded-full text-black font-black text-[10px] flex items-center justify-center hover:scale-110" title="Captain">C</button>
@@ -29,25 +28,16 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
         </div>
       )}
       
-      {/* 👇 هنا السر: خلينا التيشيرت قابل للضغط بيبعت بيانات اللاعب 👇 */}
       <div 
-        onClick={() => {
-          if (player && onSelectPlayer) {
-            onSelectPlayer(player);
-          }
-        }}
+        onClick={() => { if (player && onSelectPlayer) onSelectPlayer(player); }}
         className={`w-10 h-10 flex items-center justify-center mb-1 transition-all group-hover:scale-105 relative cursor-pointer
         ${!player && 'rounded-full bg-green-800/40 border-2 border-dashed border-white/30 text-white/30'}`}
       >
         {player ? (
            <div className="relative flex flex-col items-center">
               <Shirt size={38} className="text-white fill-white drop-shadow-md" />
-              {captainId === player.id && (
-                 <div className="absolute -top-2 -right-2 bg-yellow-400 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">C</div>
-              )}
-              {viceCaptainId === player.id && captainId !== player.id && (
-                 <div className="absolute -top-2 -right-2 bg-zinc-200 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">V</div>
-              )}
+              {captainId === player.id && <div className="absolute -top-2 -right-2 bg-yellow-400 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">C</div>}
+              {viceCaptainId === player.id && captainId !== player.id && <div className="absolute -top-2 -right-2 bg-zinc-200 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">V</div>}
               {player.team?.crest && (
                 <div className="absolute -bottom-1 -right-2 bg-white rounded-full p-[2px] shadow-sm flex items-center justify-center z-10">
                    <img src={player.team.crest} className="w-3 h-3 object-contain" alt="" referrerPolicy="no-referrer" />
@@ -63,9 +53,7 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
         ${player ? 'bg-[#37003c] text-white border border-[#00ff87]' : 'bg-black/20 text-white/50'}`}>
         {player ? player.name : 'فارغ'}
       </span>
-      {player && (
-         <span className="text-[8px] font-bold text-green-300 mt-0.5 bg-black/40 px-1 rounded">£{player.price}m</span>
-      )}
+      {player && <span className="text-[8px] font-bold text-green-300 mt-0.5 bg-black/40 px-1 rounded">£{player.price}m</span>}
     </div>
   );
 
@@ -90,33 +78,28 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
            KORATRACKER <Sparkles size={10} /> AI
         </div>
 
-        <div className="flex justify-around mt-4 z-20">
-          {[0, 1].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}
-        </div>
-        <div className="flex justify-between mt-10 z-20 px-4">
-          {[2, 3, 4, 5].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}
-        </div>
-        <div className="flex justify-between mt-10 z-20 px-4">
-          {[6, 7, 8, 9].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}
-        </div>
-        <div className="flex justify-center mt-10 z-20">
-          <PlayerSlot index={10} player={squad[10]} />
-        </div>
-        <div className="mt-auto pt-4 border-t border-white/20 bg-green-900/40 -mx-6 px-6 flex justify-between items-center h-24 relative z-20">
-          {[11, 12, 13, 14].map(i => <PlayerSlot key={i} index={i} player={squad[i]} isBench />)}
-        </div>
+        <div className="flex justify-around mt-4 z-20">{[0, 1].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}</div>
+        <div className="flex justify-between mt-10 z-20 px-4">{[2, 3, 4, 5].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}</div>
+        <div className="flex justify-between mt-10 z-20 px-4">{[6, 7, 8, 9].map(i => <PlayerSlot key={i} index={i} player={squad[i]} />)}</div>
+        <div className="flex justify-center mt-10 z-20"><PlayerSlot index={10} player={squad[10]} /></div>
+        <div className="mt-auto pt-4 border-t border-white/20 bg-green-900/40 -mx-6 px-6 flex justify-between items-center h-24 relative z-20">{[11, 12, 13, 14].map(i => <PlayerSlot key={i} index={i} player={squad[i]} isBench />)}</div>
 
         <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/20 -translate-y-1/2 z-10"></div>
         <div className="absolute top-1/2 left-1/2 w-32 h-32 border-2 border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2 z-10"></div>
       </div>
 
-      <div className="flex gap-4 w-full max-w-[400px]">
-         <button onClick={onGenerateAI} disabled={isGeneratingAI} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
-           {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-           {isGeneratingAI ? 'Analyzing...' : 'AI Rating'}
-         </button>
-         <button onClick={downloadImage} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
-           📸 Download
+      <div className="flex flex-col gap-3 w-full max-w-[400px]">
+         <div className="flex gap-3 w-full">
+           <button onClick={onGenerateAI} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
+             {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} AI Rating
+           </button>
+           {/* 👇 زرار قصف الجبهة 👇 */}
+           <button onClick={onRoastSquad} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
+             {isRoasting ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />} Roast Me
+           </button>
+         </div>
+         <button onClick={downloadImage} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
+           📸 Download Squad
          </button>
       </div>
     </div>
