@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Shirt, Crown, Sparkles } from 'lucide-react';
+import { X, Shirt, Crown, Sparkles, Loader2 } from 'lucide-react';
 
-export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain }: any) {
+export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
 
   const downloadImage = async () => {
@@ -20,8 +20,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
 
   const PlayerSlot = ({ player, index, isBench = false }: any) => (
     <div className="flex flex-col items-center w-16 relative group mt-2">
-      
-      {/* زراير التحكم (حذف - كابتن - نائب) بتظهر لما تقف بالماوس */}
       {player && (
         <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30">
           <button onClick={() => setCaptain(player.id)} className="w-5 h-5 bg-yellow-500 rounded-full text-black font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110" title="Captain">C</button>
@@ -29,21 +27,17 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
           <button onClick={() => onRemovePlayer(index, player.id)} className="w-5 h-5 bg-red-500 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110" title="Remove"><X size={12} strokeWidth={3} /></button>
         </div>
       )}
-      
       <div className={`w-10 h-10 flex items-center justify-center mb-1 transition-all group-hover:scale-105 relative cursor-pointer
         ${!player && 'rounded-full bg-green-800/40 border-2 border-dashed border-white/30 text-white/30'}`}>
         {player ? (
            <div className="relative flex flex-col items-center">
               <Shirt size={38} className="text-white fill-white drop-shadow-md" />
-              
-              {/* شارة الكابتن */}
               {captainId === player.id && (
                  <div className="absolute -top-2 -right-2 bg-yellow-400 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">C</div>
               )}
               {viceCaptainId === player.id && captainId !== player.id && (
                  <div className="absolute -top-2 -right-2 bg-zinc-200 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] border border-black z-20 shadow-md">V</div>
               )}
-
               {player.team?.crest && (
                 <div className="absolute -bottom-1 -right-2 bg-white rounded-full p-[2px] shadow-sm flex items-center justify-center z-10">
                    <img src={player.team.crest} className="w-3 h-3 object-contain" alt="" referrerPolicy="no-referrer" />
@@ -54,7 +48,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
            <span className="font-bold text-[10px]">{index + 1}</span>
         )}
       </div>
-
       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded min-w-[55px] max-w-[70px] text-center truncate shadow-md mt-1
         ${player ? 'bg-[#37003c] text-white border border-[#00ff87]' : 'bg-black/20 text-white/50'}`}>
         {player ? player.name : 'فارغ'}
@@ -67,8 +60,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
 
   return (
     <div className="flex flex-col items-center gap-6 w-full p-4">
-      
-      {/* شريط الميزانية */}
       <div className="flex items-center justify-between w-full max-w-[400px] bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-xl">
          <div className="flex items-center gap-2">
             <Crown size={18} className="text-yellow-500" />
@@ -109,8 +100,13 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
       </div>
 
       <div className="flex gap-4 w-full max-w-[400px]">
-         <button onClick={() => alert("ميزة تقييم الذكاء الاصطناعي قادمة في التحديث القادم! 🤖")} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-4 rounded-full shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
-           <Sparkles size={16} /> AI Rating
+         <button 
+           onClick={onGenerateAI} 
+           disabled={isGeneratingAI}
+           className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black py-4 rounded-full shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2"
+         >
+           {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+           {isGeneratingAI ? 'Analyzing...' : 'AI Rating'}
          </button>
          <button onClick={downloadImage} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-full shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
            📸 Download
