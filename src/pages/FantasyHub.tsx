@@ -17,34 +17,50 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
+  // State الملعب
   const [squad, setSquad] = useState<any[]>(Array(15).fill(null));
 
-  // 👇 العقل الذكي الجديد (FPL Logic) 👇
+  // 👇 العقل المدبر المُحدث (قانون الـ 3 لعيبة + تظبيط المراكز) 👇
   const addToSquad = (player: any) => {
+    // 1. هل اللاعب موجود أصلاً؟
     if (squad.some(p => p?.id === player.id)) {
       alert("اللاعب ده موجود في التشكيلة فعلاً!");
       return;
     }
 
+    // 2. قانون الـ 3 لاعبين من نفس الفريق
+    const teamId = player.team?.id;
+    const sameTeamCount = squad.filter(p => p !== null && p.team?.id === teamId).length;
+    if (sameTeamCount >= 3) {
+      alert(`عذراً! قوانين الفانتازي بتمنع اختيار أكتر من 3 لعيبة من نفس الفريق (${player.team?.shortName || player.team?.name}).`);
+      return;
+    }
+
+    // 3. تحديد المركز الذكي
     let targetRange: number[] = [];
-    const pos = player.position?.toLowerCase() || '';
-    const playerName = player.name?.toLowerCase() || '';
+    const pos = (player.position || '').toLowerCase();
+    const name = (player.name || '').toLowerCase();
 
-    // ✨ قائمة استثناءات ذكية لأشهر لعيبة الوسط في الفانتازي (اللي الـ API بيعتبرهم هجوم)
-    const isFplMidfielder = ['foden', 'gordon', 'salah', 'saka', 'palmer', 'son', 'diaz', 'mbeumo', 'bowen', 'sterling'].some(n => playerName.includes(n));
+    // قائمة أشهر لعيبة الوسط في الفانتازي
+    const isFplMid = pos.includes('midfield') || pos.includes('wing') || pos === 'mf' || 
+                     ['salah', 'saka', 'foden', 'gordon', 'palmer', 'son', 'diaz', 'mbeumo', 'bowen', 'sterling', 'eze'].some(n => name.includes(n));
+    const isDef = pos.includes('defen') || pos.includes('back') || pos === 'df';
+    const isGk = pos.includes('goal') || pos === 'gk';
+    const isFwd = pos.includes('forward') || pos.includes('strik') || pos.includes('attack') || pos.includes('offen') || pos === 'fw';
 
-    if (pos.includes('goal') || pos === 'gk') {
-      targetRange = [10]; // مكان الحارس
-    } else if (pos.includes('defen') || pos.includes('back') || pos === 'df') {
-      targetRange = [6, 7, 8, 9]; // أماكن الدفاع
-    } else if (isFplMidfielder || pos.includes('midfield') || pos.includes('wing') || pos === 'mf') {
-      targetRange = [2, 3, 4, 5]; // أماكن الوسط (ضفنا الأجنحة والاستثناءات)
-    } else if (pos.includes('forward') || pos.includes('attack') || pos.includes('offen') || pos === 'fw') {
-      targetRange = [0, 1]; // أماكن الهجوم الصريح (Haaland, Watkins, etc)
+    if (isGk) {
+      targetRange = [10];
+    } else if (isDef) {
+      targetRange = [6, 7, 8, 9];
+    } else if (isFplMid) { // بنفحص الوسط قبل الهجوم عشان نصطاد الأجنحة
+      targetRange = [2, 3, 4, 5];
+    } else if (isFwd) {
+      targetRange = [0, 1];
     } else {
       targetRange = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
     }
 
+    // 4. التسكين في الملعب أو الدكة
     let targetIndex = targetRange.find(idx => squad[idx] === null);
 
     if (targetIndex === undefined) {
@@ -67,7 +83,7 @@ export default function FantasyHub() {
     newSquad[index] = null;
     setSquad(newSquad);
   };
-  // 👆 نهاية لوجيك الملعب الذكي 👆
+  // 👆 نهاية العقل المدبر 👆
 
   const handleShare = () => {
     if (selectedPlayers.length !== 2) return;
