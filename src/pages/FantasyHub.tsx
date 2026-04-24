@@ -17,10 +17,9 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
-  // 👇 State الملعب 👇
   const [squad, setSquad] = useState<any[]>(Array(15).fill(null));
 
-  // 👇 العقل الذكي الجديد لتوزيع اللعيبة حسب المراكز 👇
+  // 👇 العقل الذكي الجديد (FPL Logic) 👇
   const addToSquad = (player: any) => {
     if (squad.some(p => p?.id === player.id)) {
       alert("اللاعب ده موجود في التشكيلة فعلاً!");
@@ -29,41 +28,38 @@ export default function FantasyHub() {
 
     let targetRange: number[] = [];
     const pos = player.position?.toLowerCase() || '';
+    const playerName = player.name?.toLowerCase() || '';
 
-    // تحديد أماكن الملعب حسب المركز
+    // ✨ قائمة استثناءات ذكية لأشهر لعيبة الوسط في الفانتازي (اللي الـ API بيعتبرهم هجوم)
+    const isFplMidfielder = ['foden', 'gordon', 'salah', 'saka', 'palmer', 'son', 'diaz', 'mbeumo', 'bowen', 'sterling'].some(n => playerName.includes(n));
+
     if (pos.includes('goal') || pos === 'gk') {
       targetRange = [10]; // مكان الحارس
     } else if (pos.includes('defen') || pos.includes('back') || pos === 'df') {
       targetRange = [6, 7, 8, 9]; // أماكن الدفاع
-    } else if (pos.includes('midfield') || pos === 'mf') {
-      targetRange = [2, 3, 4, 5]; // أماكن الوسط
-    } else if (pos.includes('forward') || pos.includes('attack') || pos.includes('offen') || pos.includes('wing') || pos === 'fw') {
-      targetRange = [0, 1]; // أماكن الهجوم
+    } else if (isFplMidfielder || pos.includes('midfield') || pos.includes('wing') || pos === 'mf') {
+      targetRange = [2, 3, 4, 5]; // أماكن الوسط (ضفنا الأجنحة والاستثناءات)
+    } else if (pos.includes('forward') || pos.includes('attack') || pos.includes('offen') || pos === 'fw') {
+      targetRange = [0, 1]; // أماكن الهجوم الصريح (Haaland, Watkins, etc)
     } else {
-      // لو المركز مش معروف، خليه يدور في الملعب الأساسي كله
-      targetRange = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      targetRange = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
     }
 
-    // دور على أول مكان فاضي في مركزه
     let targetIndex = targetRange.find(idx => squad[idx] === null);
 
-    // لو مركزه الأساسي مليان، دور في دكة البدلاء
     if (targetIndex === undefined) {
       const benchRange = [11, 12, 13, 14];
       targetIndex = benchRange.find(idx => squad[idx] === null);
     }
 
-    // لو الدكة كمان مليانة
     if (targetIndex === undefined) {
       alert(`مفيش مكان فاضي لـ ${player.name} في مركزه ولا على الدكة!`);
       return;
     }
 
-    // إضافة اللاعب للمكان اللي تم اختياره
     const newSquad = [...squad];
     newSquad[targetIndex] = player;
     setSquad(newSquad);
-    alert(`تم إضافة ${player.name} للتشكيلة بنجاح! ⚽`);
   };
 
   const removeFromSquad = (index: number) => {
