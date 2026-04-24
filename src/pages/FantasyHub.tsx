@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-// 👇 ضفنا أيقونات Flame و Target 👇
-import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal } from 'lucide-react';
+import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Skeleton } from '../components/Skeleton';
@@ -21,7 +20,6 @@ export default function FantasyHub() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiReport, setAiReport] = useState<any>(null);
 
-  // 👇 States للـ Roast والـ Predictor 👇
   const [isRoasting, setIsRoasting] = useState(false);
   const [roastReport, setRoastReport] = useState<string[] | null>(null);
   const [predictedPlayer, setPredictedPlayer] = useState<any>(null);
@@ -42,7 +40,6 @@ export default function FantasyHub() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // حفظ التوقع في المتصفح عشان يفضل موجود
   useEffect(() => {
     const savedPrediction = localStorage.getItem('kt_prediction');
     if (savedPrediction) setPredictedPlayer(JSON.parse(savedPrediction));
@@ -89,31 +86,22 @@ export default function FantasyHub() {
     }, 2000);
   };
 
-  // 👇 خوارزمية قصف الجبهة الساخرة 👇
   const generateRoastReport = () => {
     const activePlayers = squad.filter(p => p !== null);
-    if (activePlayers.length < 11) {
-      alert("يا عم حط 11 لاعب الأول عشان نلاقي حاجة نتريق عليها! 😅");
-      return;
-    }
+    if (activePlayers.length < 11) { alert("يا عم حط 11 لاعب الأول عشان نلاقي حاجة نتريق عليها! 😅"); return; }
     setIsRoasting(true);
     setTimeout(() => {
       let roasts: string[] = [];
       const captain = squad.find(p => p && p.id === captainId);
-      
       if (!captain) roasts.push("بتلعب من غير كابتن؟ إنت بايع القضية خالص يسطا! 🤡");
       else if (captain.price >= 11) roasts.push(`مكابتن ${captain.name}؟ إيه العبقرية دي! مفيش حد في الكوكب فكر فيها قبلك 🥱.`);
       else roasts.push(`مكابتن ${captain.name}؟ واضح إنك بتحب الريسك.. أو غالباً متعرفش حاجة في الكورة. 🤦‍♂️`);
-
       if (activePlayers.length < 15) roasts.push("سايب الدكة فاضية ليه؟ ناوي تنزل تلعب إنت لو حد اتصاب؟ 🩼");
-      
       const budgetNum = parseFloat(totalBudget);
       if (budgetNum < 85) roasts.push(`سايب فلوس في البنك ليه؟ خايف عليهم من التضخم؟ اصرف يا عم وهات لعيبة عدلة! 💸`);
-
       const avgForm = activePlayers.reduce((sum, p) => sum + parseFloat(p.form || 0), 0) / activePlayers.length;
       if (avgForm < 4) roasts.push("فورمة اللعيبة بتاعتك في النازل.. التشكيلة دي بتنافس على الهبوط للدرجة التانية حرفياً. 📉");
       else roasts.push("حتى لو فورمتهم حلوة دلوقتي.. هيبتدوا يبلانكوا أول ما تحطهم في تشكيلتك، إحنا عارفين حظك. 🌚");
-
       setRoastReport(roasts);
       setIsRoasting(false);
     }, 1500);
@@ -260,6 +248,78 @@ export default function FantasyHub() {
   const removePlayer = (id: number) => { setSelectedPlayers(selectedPlayers.filter(p => p.id !== id)); if (selectedPlayers.length <= 1) setIsComparisonOpen(false); };
   const clearComparison = () => { setSelectedPlayers([]); setIsComparisonOpen(false); };
 
+  // 👇 خوارزمية زرار Auto Pick 👇
+  const handleAutoPick = () => {
+    if (allPlayers.length < 30) {
+      alert("استنى ثواني لحد ما باقي اللعيبة تحمل من السيرفر! ⏳");
+      return;
+    }
+
+    // فلترة لعيبة الإنجليزي وترتيبهم بالأقوى (Points/Form)
+    const pool = allPlayers
+      .filter(p => p.league === 'PL')
+      .sort((a, b) => (parseFloat(b.points) + parseFloat(b.form)) - (parseFloat(a.points) + parseFloat(a.form)));
+
+    const newSquad = Array(15).fill(null);
+    const teamCounts: Record<number, number> = {};
+
+    const getPos = (p: any) => {
+       const pos = (p.position || '').toLowerCase();
+       const name = (p.name || '').toLowerCase();
+       if (pos.includes('goal') || pos === 'gk') return 'GK';
+       if (pos.includes('defen') || pos.includes('back') || pos === 'df') return 'DEF';
+       if (pos.includes('midfield') || pos.includes('wing') || pos === 'mf' || ['salah', 'saka', 'foden', 'gordon', 'palmer', 'son', 'diaz', 'mbeumo', 'bowen', 'sterling', 'eze'].some(n => name.includes(n))) return 'MID';
+       if (pos.includes('forward') || pos.includes('strik') || pos.includes('attack') || pos.includes('offen') || pos === 'fw') return 'FWD';
+       return 'MID'; 
+    };
+
+    const pickPlayer = (posTarget: string, count: number) => {
+       const picked = [];
+       for (let player of pool) {
+          if (picked.length >= count) break;
+          if (getPos(player) !== posTarget) continue;
+          
+          const teamId = player.team?.id;
+          if ((teamCounts[teamId] || 0) >= 3) continue; // ممنوع اكتر من 3 من نفس الفريق
+
+          picked.push(player);
+          teamCounts[teamId] = (teamCounts[teamId] || 0) + 1;
+       }
+       return picked;
+    };
+
+    const pickedGKs = pickPlayer('GK', 2);
+    const pickedDEFs = pickPlayer('DEF', 5);
+    const pickedMIDs = pickPlayer('MID', 5);
+    const pickedFWDs = pickPlayer('FWD', 3);
+
+    // توزيعهم في الملعب حسب الأماكن بتاعتنا
+    if (pickedFWDs[0]) newSquad[0] = pickedFWDs[0];
+    if (pickedFWDs[1]) newSquad[1] = pickedFWDs[1];
+    if (pickedFWDs[2]) newSquad[14] = pickedFWDs[2]; // دكة
+
+    if (pickedMIDs[0]) newSquad[2] = pickedMIDs[0];
+    if (pickedMIDs[1]) newSquad[3] = pickedMIDs[1];
+    if (pickedMIDs[2]) newSquad[4] = pickedMIDs[2];
+    if (pickedMIDs[3]) newSquad[5] = pickedMIDs[3];
+    if (pickedMIDs[4]) newSquad[13] = pickedMIDs[4]; // دكة
+
+    if (pickedDEFs[0]) newSquad[6] = pickedDEFs[0];
+    if (pickedDEFs[1]) newSquad[7] = pickedDEFs[1];
+    if (pickedDEFs[2]) newSquad[8] = pickedDEFs[2];
+    if (pickedDEFs[3]) newSquad[9] = pickedDEFs[3];
+    if (pickedDEFs[4]) newSquad[12] = pickedDEFs[4]; // دكة
+
+    if (pickedGKs[0]) newSquad[10] = pickedGKs[0];
+    if (pickedGKs[1]) newSquad[11] = pickedGKs[1]; // دكة
+
+    setSquad(newSquad);
+
+    // كابتنة أوتوماتيك لأول لاعب (الأقوى)
+    const bestPlayer = [...newSquad].filter(Boolean).sort((a, b) => parseFloat(b.points) - parseFloat(a.points))[0];
+    if (bestPlayer) setCaptainId(bestPlayer.id);
+  };
+
   return (
     <div className="space-y-12 pb-20 max-w-6xl mx-auto px-4 sm:px-6"> 
       <header className="pt-12 text-center relative">
@@ -399,7 +459,7 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 👇 1. قسم "عراف الجولة" الجديد (Weekly Predictor) 👇 */}
+      {/* 👇 1. قسم "عراف الجولة" (Weekly Predictor) 👇 */}
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2rem] md:rounded-[40px] p-6 md:p-12 border border-indigo-500/30 shadow-2xl relative overflow-hidden mt-8 text-center">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Target size={150} /></div>
         <div className="relative z-10 flex flex-col items-center">
@@ -449,6 +509,7 @@ export default function FantasyHub() {
         </div>
       </section>
 
+      {/* 👇 استدعاء SquadBuilder وربطناه بـ onAutoPick 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[2rem] md:rounded-[40px] p-6 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center mt-8">
          <div className="text-center mb-6 md:mb-8">
             <h2 className="text-xl md:text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
@@ -465,8 +526,9 @@ export default function FantasyHub() {
             onGenerateAI={generateAIReport}
             isGeneratingAI={isGeneratingAI}
             onSelectPlayer={setActivePlayer}
-            onRoastSquad={generateRoastReport} /* 👈 ربط زرار القصف */
+            onRoastSquad={generateRoastReport}
             isRoasting={isRoasting}
+            onAutoPick={handleAutoPick} /* 👈 السطر ده اللي بيشغل الخوارزمية */
          />
       </section>
 
@@ -561,7 +623,7 @@ export default function FantasyHub() {
          </div>
       </section>
 
-      {/* Comparison Tray */}
+      {/* Comparison Tray Mobile Fix */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-2xl px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
@@ -666,7 +728,6 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* 👇 نافذة قصف الجبهة الساخرة 🤡 👇 */}
       <AnimatePresence>
         {roastReport && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10">

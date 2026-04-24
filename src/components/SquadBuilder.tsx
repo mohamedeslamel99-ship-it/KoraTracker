@@ -1,8 +1,9 @@
 import { useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Shirt, Crown, Sparkles, Loader2, Flame } from 'lucide-react';
+// 👇 ضفنا أيقونة Wand2 (العصا السحرية) 👇
+import { X, Shirt, Crown, Sparkles, Loader2, Flame, Wand2 } from 'lucide-react';
 
-export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI, onSelectPlayer, onRoastSquad, isRoasting }: any) {
+export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI, onSelectPlayer, onRoastSquad, isRoasting, onAutoPick }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
 
   const downloadImage = async () => {
@@ -88,19 +89,25 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
         <div className="absolute top-1/2 left-1/2 w-32 h-32 border-2 border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2 z-10"></div>
       </div>
 
+      {/* 👇 الزراير متنسقة في شبكة (Grid) شكلها تحفة 👇 */}
       <div className="flex flex-col gap-3 w-full max-w-[400px]">
          <div className="flex gap-3 w-full">
            <button onClick={onGenerateAI} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
              {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} AI Rating
            </button>
-           {/* 👇 زرار قصف الجبهة 👇 */}
            <button onClick={onRoastSquad} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
              {isRoasting ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />} Roast Me
            </button>
          </div>
-         <button onClick={downloadImage} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[11px] tracking-widest flex items-center justify-center gap-2">
-           📸 Download Squad
-         </button>
+         <div className="flex gap-3 w-full">
+           {/* زرار Auto Pick */}
+           <button onClick={onAutoPick} className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
+             <Wand2 size={14} /> Auto Pick
+           </button>
+           <button onClick={downloadImage} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
+             📸 Download
+           </button>
+         </div>
       </div>
     </div>
   );
