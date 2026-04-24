@@ -178,15 +178,12 @@ export default function FantasyHub() {
   });
   const teams = teamsData?.teams || [];
 
-  // 👇 سحب المباريات القادمة من الـ API 👇
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches?status=SCHEDULED', fetchFootballData, { revalidateOnFocus: false });
 
-  // 👇 خوارزمية تجميع المباريات حسب الجولة (Gameweek) 👇
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     const matches = fixturesData.matches;
     
-    // تجميع المباريات حسب الـ matchday
     const grouped = matches.reduce((acc: any, match: any) => {
       const gw = match.matchday;
       if (!gw) return acc;
@@ -195,15 +192,14 @@ export default function FantasyHub() {
       return acc;
     }, {});
 
-    // ترتيب الجولات تصاعدياً وأخذ أقرب 3 جولات
     return Object.keys(grouped)
       .map(Number)
       .sort((a, b) => a - b)
       .slice(0, 3)
       .map(gw => ({
         gw,
-        // هناخد أول 4 ماتشات بس نعرضهم كعينة في الكارت عشان الشكل ميبقاش طويل جداً
-        matches: grouped[gw].slice(0, 4) 
+        // 👇 شيلنا الـ slice(0,4) عشان كل الـ 10 مباريات تظهر 👇
+        matches: grouped[gw] 
       }));
   }, [fixturesData]);
 
@@ -676,7 +672,7 @@ export default function FantasyHub() {
          />
       </section>
 
-      {/* 👇 قسم المباريات المربوط بالـ API الفعلي 👇 */}
+      {/* 👇 قسم المباريات المربوط بالـ API الفعلي مع خاصية السكرول 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden mt-8">
          <div className="flex items-center gap-4 mb-8 border-b border-zinc-800 pb-6">
             <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
@@ -695,28 +691,26 @@ export default function FantasyHub() {
          ) : upcomingGameweeks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                {upcomingGameweeks.map((gameweek: any) => (
-                   <div key={gameweek.gw} className="bg-zinc-900/50 border border-zinc-800/80 hover:border-indigo-500/50 transition-colors rounded-3xl p-6 relative overflow-hidden">
-                       <div className="absolute top-0 right-0 p-4 opacity-5"><CalendarDays size={60} /></div>
-                       <div className="flex justify-between items-center mb-6 relative z-10">
+                   <div key={gameweek.gw} className="bg-zinc-900/50 border border-zinc-800/80 hover:border-indigo-500/50 transition-colors rounded-3xl p-6 relative overflow-hidden flex flex-col">
+                       <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><CalendarDays size={60} /></div>
+                       <div className="flex justify-between items-center mb-6 relative z-10 shrink-0">
                           <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Gameweek {gameweek.gw}</h3>
                           <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded">Upcoming</span>
                        </div>
-                       <div className="space-y-3 relative z-10">
+                       {/* ضفنا هنا خصائص السكرول (overflow-y-auto) عشان تستوعب الـ 10 ماتشات */}
+                       <div className="space-y-3 relative z-10 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar flex-1">
                            {gameweek.matches.map((match: any) => (
                                <div key={match.id} className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition-colors">
                                    <span className="text-xs font-bold text-white uppercase w-16 text-left truncate" title={match.homeTeam.name}>
                                      {match.homeTeam.tla || match.homeTeam.shortName || match.homeTeam.name.substring(0,3)}
                                    </span>
-                                   <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
+                                   <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 shrink-0">VS</span>
                                    <span className="text-xs font-bold text-white uppercase w-16 text-right truncate" title={match.awayTeam.name}>
                                      {match.awayTeam.tla || match.awayTeam.shortName || match.awayTeam.name.substring(0,3)}
                                    </span>
                                </div>
                            ))}
                        </div>
-                       {gameweek.matches.length === 4 && (
-                           <p className="text-[8px] text-center text-zinc-600 uppercase tracking-widest mt-4 relative z-10">+ More fixtures</p>
-                       )}
                    </div>
                ))}
             </div>
