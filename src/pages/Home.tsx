@@ -1,8 +1,7 @@
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
 import MatchCard from '../components/MatchCard';
-import { Trophy, Calendar, Loader2, AlertCircle, ArrowRight, BrainCircuit, LineChart, ShieldHalf, Flame, Swords, Plus } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Trophy, Calendar, Loader2, AlertCircle, ArrowRight, BrainCircuit, LineChart, ShieldHalf, Flame, Swords, Plus, TrendingUp } from 'lucide-react';import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { useMemo } from 'react';
