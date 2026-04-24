@@ -3,6 +3,10 @@
     {
       "source": "/api/football/:path*",
       "destination": "https://api.football-data.org/v4/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }

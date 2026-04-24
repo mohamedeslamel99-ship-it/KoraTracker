@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-// 👇 ضفنا أيقونة CalendarDays عشان قسم الجولات 👇
 import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -97,7 +96,6 @@ export default function FantasyHub() {
   };
 
   const addToSquad = (player: any) => {
-    // 👇 فلتر حماية: التشكيلة للدوري الإنجليزي فقط 👇
     if (player.league && player.league !== 'PL') {
       alert(`❌ عذراً! (${player.name}) بيلعب في دوري تاني. مسموح بوضع لاعبي الدوري الإنجليزي فقط في التشكيلة.`);
       return;
@@ -180,6 +178,35 @@ export default function FantasyHub() {
   });
   const teams = teamsData?.teams || [];
 
+  // 👇 سحب المباريات القادمة من الـ API 👇
+  const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches?status=SCHEDULED', fetchFootballData, { revalidateOnFocus: false });
+
+  // 👇 خوارزمية تجميع المباريات حسب الجولة (Gameweek) 👇
+  const upcomingGameweeks = useMemo(() => {
+    if (!fixturesData?.matches) return [];
+    const matches = fixturesData.matches;
+    
+    // تجميع المباريات حسب الـ matchday
+    const grouped = matches.reduce((acc: any, match: any) => {
+      const gw = match.matchday;
+      if (!gw) return acc;
+      if (!acc[gw]) acc[gw] = [];
+      acc[gw].push(match);
+      return acc;
+    }, {});
+
+    // ترتيب الجولات تصاعدياً وأخذ أقرب 3 جولات
+    return Object.keys(grouped)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .slice(0, 3)
+      .map(gw => ({
+        gw,
+        // هناخد أول 4 ماتشات بس نعرضهم كعينة في الكارت عشان الشكل ميبقاش طويل جداً
+        matches: grouped[gw].slice(0, 4) 
+      }));
+  }, [fixturesData]);
+
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => {
     try {
       const saved = localStorage.getItem('kt_players_db');
@@ -210,7 +237,7 @@ export default function FantasyHub() {
         if (p?.id) {
           uniqueMap.set(p.id, {
             ...p,
-            league: 'PL', // 👈 أضفنا دوري هنا
+            league: 'PL',
             goals: p.goals || 0,
             assists: p.assists ?? 0,
             appearances: p.appearances ?? 0,
@@ -224,7 +251,7 @@ export default function FantasyHub() {
       });
 
       const combined = [
-        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})), // 👈 بنحدد دوري كل هداف
+        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})),
         ...(llScorers?.scorers || []).map((s:any) => ({...s, league: 'PD'})),
         ...(saScorers?.scorers || []).map((s:any) => ({...s, league: 'SA'})),
         ...(blScorers?.scorers || []).map((s:any) => ({...s, league: 'BL1'}))
@@ -234,7 +261,7 @@ export default function FantasyHub() {
         if (s?.player?.id) {
           uniqueMap.set(s.player.id, {
             ...s.player,
-            league: s.league, // 👈 بنحفظ اسم الدوري
+            league: s.league,
             team: s.team || { name: 'Unknown' },
             goals: s.goals || 0,
             assists: s.assists ?? Math.floor(Math.random() * 5),
@@ -291,7 +318,7 @@ export default function FantasyHub() {
             if (data?.squad) {
               const teamSquad = data.squad.map((p: any) => ({
                 ...p,
-                league: 'PL', // 👈 بنحدد إن دول لعيبة إنجليزي
+                league: 'PL',
                 team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName },
                 goals: Math.floor(Math.random() * 5),
                 assists: Math.floor(Math.random() * 5),
@@ -649,7 +676,7 @@ export default function FantasyHub() {
          />
       </section>
 
-      {/* 👇 القسم الجديد: مواجهات الجولات (Gameweeks) المبدئي 👇 */}
+      {/* 👇 قسم المباريات المربوط بالـ API الفعلي 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden mt-8">
          <div className="flex items-center gap-4 mb-8 border-b border-zinc-800 pb-6">
             <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
@@ -661,36 +688,43 @@ export default function FantasyHub() {
             </div>
          </div>
          
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             {[1, 2, 3].map((gw) => (
-                 <div key={gw} className="bg-zinc-900/50 border border-zinc-800/80 hover:border-indigo-500/50 transition-colors rounded-3xl p-6 relative overflow-hidden">
-                     <div className="absolute top-0 right-0 p-4 opacity-5"><CalendarDays size={60} /></div>
-                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Gameweek {gw}</h3>
-                        <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded">Upcoming</span>
-                     </div>
-                     <div className="space-y-3">
-                         {/* مباريات ديمو (هتتربط بالـ API الخطوة الجاية) */}
-                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">ARS</span>
-                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">MCI</span>
-                         </div>
-                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">LIV</span>
-                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">CHE</span>
-                         </div>
-                         <div className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800">
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">MUN</span>
-                             <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
-                             <span className="text-xs font-bold text-white uppercase w-12 text-center">TOT</span>
-                         </div>
-                     </div>
-                     <button className="w-full mt-4 py-2 bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-[9px] font-black text-zinc-400 uppercase tracking-widest transition-all">View Full Matchday</button>
-                 </div>
-             ))}
-         </div>
+         {fixturesLoading ? (
+            <div className="flex justify-center py-10">
+               <Loader2 className="animate-spin text-indigo-500" size={40} />
+            </div>
+         ) : upcomingGameweeks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               {upcomingGameweeks.map((gameweek: any) => (
+                   <div key={gameweek.gw} className="bg-zinc-900/50 border border-zinc-800/80 hover:border-indigo-500/50 transition-colors rounded-3xl p-6 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 p-4 opacity-5"><CalendarDays size={60} /></div>
+                       <div className="flex justify-between items-center mb-6 relative z-10">
+                          <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Gameweek {gameweek.gw}</h3>
+                          <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded">Upcoming</span>
+                       </div>
+                       <div className="space-y-3 relative z-10">
+                           {gameweek.matches.map((match: any) => (
+                               <div key={match.id} className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+                                   <span className="text-xs font-bold text-white uppercase w-16 text-left truncate" title={match.homeTeam.name}>
+                                     {match.homeTeam.tla || match.homeTeam.shortName || match.homeTeam.name.substring(0,3)}
+                                   </span>
+                                   <span className="text-[9px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">VS</span>
+                                   <span className="text-xs font-bold text-white uppercase w-16 text-right truncate" title={match.awayTeam.name}>
+                                     {match.awayTeam.tla || match.awayTeam.shortName || match.awayTeam.name.substring(0,3)}
+                                   </span>
+                               </div>
+                           ))}
+                       </div>
+                       {gameweek.matches.length === 4 && (
+                           <p className="text-[8px] text-center text-zinc-600 uppercase tracking-widest mt-4 relative z-10">+ More fixtures</p>
+                       )}
+                   </div>
+               ))}
+            </div>
+         ) : (
+            <div className="text-center py-10">
+               <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">No upcoming fixtures found.</p>
+            </div>
+         )}
       </section>
       {/* 👆 نهاية قسم الجولات 👆 */}
 
