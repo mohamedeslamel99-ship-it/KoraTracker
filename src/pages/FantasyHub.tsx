@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-// 👇 ضفنا الـ Plus هنا
 import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -18,23 +17,52 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
-  // 👇 ده الـ State واللوجيك بتاع الملعب (15 لاعب) 👇
+  // 👇 State الملعب 👇
   const [squad, setSquad] = useState<any[]>(Array(15).fill(null));
 
+  // 👇 العقل الذكي الجديد لتوزيع اللعيبة حسب المراكز 👇
   const addToSquad = (player: any) => {
     if (squad.some(p => p?.id === player.id)) {
       alert("اللاعب ده موجود في التشكيلة فعلاً!");
       return;
     }
-    const firstEmptyIndex = squad.findIndex(p => p === null);
-    if (firstEmptyIndex === -1) {
-       alert("التشكيلة مكتملة (15 لاعب)! امسح حد من الملعب الأول.");
-       return;
+
+    let targetRange: number[] = [];
+    const pos = player.position?.toLowerCase() || '';
+
+    // تحديد أماكن الملعب حسب المركز
+    if (pos.includes('goal') || pos === 'gk') {
+      targetRange = [10]; // مكان الحارس
+    } else if (pos.includes('defen') || pos.includes('back') || pos === 'df') {
+      targetRange = [6, 7, 8, 9]; // أماكن الدفاع
+    } else if (pos.includes('midfield') || pos === 'mf') {
+      targetRange = [2, 3, 4, 5]; // أماكن الوسط
+    } else if (pos.includes('forward') || pos.includes('attack') || pos.includes('offen') || pos.includes('wing') || pos === 'fw') {
+      targetRange = [0, 1]; // أماكن الهجوم
+    } else {
+      // لو المركز مش معروف، خليه يدور في الملعب الأساسي كله
+      targetRange = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     }
+
+    // دور على أول مكان فاضي في مركزه
+    let targetIndex = targetRange.find(idx => squad[idx] === null);
+
+    // لو مركزه الأساسي مليان، دور في دكة البدلاء
+    if (targetIndex === undefined) {
+      const benchRange = [11, 12, 13, 14];
+      targetIndex = benchRange.find(idx => squad[idx] === null);
+    }
+
+    // لو الدكة كمان مليانة
+    if (targetIndex === undefined) {
+      alert(`مفيش مكان فاضي لـ ${player.name} في مركزه ولا على الدكة!`);
+      return;
+    }
+
+    // إضافة اللاعب للمكان اللي تم اختياره
     const newSquad = [...squad];
-    newSquad[firstEmptyIndex] = player;
+    newSquad[targetIndex] = player;
     setSquad(newSquad);
-    // تنبيه بسيط لليوزر إن اللاعب انضاف
     alert(`تم إضافة ${player.name} للتشكيلة بنجاح! ⚽`);
   };
 
@@ -43,7 +71,7 @@ export default function FantasyHub() {
     newSquad[index] = null;
     setSquad(newSquad);
   };
-  // 👆 نهاية لوجيك الملعب 👆
+  // 👆 نهاية لوجيك الملعب الذكي 👆
 
   const handleShare = () => {
     if (selectedPlayers.length !== 2) return;
@@ -372,7 +400,6 @@ export default function FantasyHub() {
                       </div>
                       <div className="flex items-center gap-2">
                         
-                        {/* 👇 زرار الإضافة للتشكيلة ➕ 👇 */}
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -384,7 +411,6 @@ export default function FantasyHub() {
                           <Plus size={14} strokeWidth={3} />
                         </button>
                         
-                        {/* زرار المقارنة الأساسي */}
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -406,7 +432,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* Main Workspace */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4 space-y-6">
            <AnimatePresence mode="wait">
@@ -465,7 +490,6 @@ export default function FantasyHub() {
                        <Scale size={14} />
                        Compare
                      </button>
-                     {/* زرار إضافة اللاعب من الكارت للتشكيلة */}
                      <button
                        onClick={() => addToSquad(activePlayer)}
                        className="flex-1 h-12 rounded-xl bg-emerald-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
@@ -557,7 +581,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 👇 استدعاء الملعب وبعتناله الـ squad و الـ removeFromSquad 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
          <div className="text-center mb-8">
             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
