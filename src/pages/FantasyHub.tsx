@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2 } from 'lucide-react';
+// 👇 ضفنا الـ Plus هنا
+import { Users, Search, Scale, Shield, Zap, TrendingUp, Info, X, ChevronRight, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Skeleton } from '../components/Skeleton';
-// 👇 استيراد مُولد التشكيلة الجديد
 import SquadBuilder from '../components/SquadBuilder';
 
 export default function FantasyHub() {
@@ -18,6 +18,33 @@ export default function FantasyHub() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   
+  // 👇 ده الـ State واللوجيك بتاع الملعب (15 لاعب) 👇
+  const [squad, setSquad] = useState<any[]>(Array(15).fill(null));
+
+  const addToSquad = (player: any) => {
+    if (squad.some(p => p?.id === player.id)) {
+      alert("اللاعب ده موجود في التشكيلة فعلاً!");
+      return;
+    }
+    const firstEmptyIndex = squad.findIndex(p => p === null);
+    if (firstEmptyIndex === -1) {
+       alert("التشكيلة مكتملة (15 لاعب)! امسح حد من الملعب الأول.");
+       return;
+    }
+    const newSquad = [...squad];
+    newSquad[firstEmptyIndex] = player;
+    setSquad(newSquad);
+    // تنبيه بسيط لليوزر إن اللاعب انضاف
+    alert(`تم إضافة ${player.name} للتشكيلة بنجاح! ⚽`);
+  };
+
+  const removeFromSquad = (index: number) => {
+    const newSquad = [...squad];
+    newSquad[index] = null;
+    setSquad(newSquad);
+  };
+  // 👆 نهاية لوجيك الملعب 👆
+
   const handleShare = () => {
     if (selectedPlayers.length !== 2) return;
     const [p1, p2] = selectedPlayers;
@@ -33,7 +60,6 @@ export default function FantasyHub() {
   });
   const teams = teamsData?.teams || [];
 
-  // Scraper State & Persistence
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => {
     try {
       const saved = localStorage.getItem('kt_players_db');
@@ -51,7 +77,6 @@ export default function FantasyHub() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'cooling' | 'staggering' | 'synced'>('idle');
 
-  // Fetch scorers baseline (staggered or conservative)
   const { data: plScorers, error: plError } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
   const { data: llScorers } = useSWR(endpoints.getTopScorers('PD'), fetchFootballData, { revalidateOnFocus: false });
   const { data: saScorers } = useSWR(endpoints.getTopScorers('SA'), fetchFootballData, { revalidateOnFocus: false });
@@ -61,7 +86,6 @@ export default function FantasyHub() {
     try {
       const uniqueMap = new Map();
       
-      // 1. Scraped League Players
       leaguePlayers.forEach(p => {
         if (p?.id) {
           uniqueMap.set(p.id, {
@@ -78,7 +102,6 @@ export default function FantasyHub() {
         }
       });
 
-      // 2. Top Scorers
       const combined = [
         ...(plScorers?.scorers || []),
         ...(llScorers?.scorers || []),
@@ -113,7 +136,7 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term || term.length < 2) {
-      searchResults([]);
+      setSearchResults([]);
       return;
     }
     const results = allPlayers.filter(p => 
@@ -123,7 +146,6 @@ export default function FantasyHub() {
     setSearchResults(results);
   };
 
-  // Scraper Effect: Iteratively fetch squads with local persistence check
   useEffect(() => {
     const isRecentlySynced = localStorage.getItem('kt_last_sync') && 
                             (Date.now() - parseInt(localStorage.getItem('kt_last_sync')!, 10)) < 12 * 60 * 60 * 1000;
@@ -133,7 +155,6 @@ export default function FantasyHub() {
         setIsSyncing(true);
         setSyncStatus('staggering');
         
-        // Skip staggered delay if we already have some data (for smoother continuation)
         if (syncedTeams === 0) {
           await new Promise(r => setTimeout(r, 10000));
         }
@@ -172,7 +193,6 @@ export default function FantasyHub() {
               
               i++; 
             }
-            // 9s delay = Ultra safe for free-tier budget shared across app
             await new Promise(r => setTimeout(r, 9000));
           } catch (err: any) {
             const isRateLimit = err.message?.includes('limit') || err.message?.includes('Wait');
@@ -180,11 +200,10 @@ export default function FantasyHub() {
               setSyncStatus('cooling');
               const waitMatch = err.message.match(/Wait (\d+) seconds/i);
               const waitTime = waitMatch ? parseInt(waitMatch[1]) : 45;
-              console.warn(`[FantasyHub] Traffic Warden active. Pausing for ${waitTime + 10}s...`);
               await new Promise(r => setTimeout(r, (waitTime + 10) * 1000));
               setSyncStatus('running');
             } else {
-              i++; // Skip after 3s delay on normal errors
+              i++; 
               await new Promise(r => setTimeout(r, 3000));
             }
           }
@@ -202,7 +221,6 @@ export default function FantasyHub() {
     }
   }, [teams]);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -220,7 +238,6 @@ export default function FantasyHub() {
   const addToComparison = (player: any) => {
     if (selectedPlayers.find(p => p.id === player.id)) return;
     if (selectedPlayers.length >= 2) {
-      // Prompt user or automatically swap? Let's swap the oldest one.
       setSelectedPlayers([selectedPlayers[1], player]);
     } else {
       setSelectedPlayers([...selectedPlayers, player]);
@@ -239,7 +256,6 @@ export default function FantasyHub() {
 
   return (
     <div className="space-y-12 pb-20 max-w-6xl mx-auto">
-      {/* Header Section */}
       <header className="pt-12 text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-64 w-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
         <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-6">
@@ -253,7 +269,6 @@ export default function FantasyHub() {
         </p>
       </header>
 
-      {/* Global Search Bar */}
       <section className="relative z-40 max-w-2xl mx-auto px-4">
         {(plError || plScorers?.message?.includes('limit')) && !isSyncing && (
           <div className="mb-4 flex items-center justify-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest animate-pulse">
@@ -309,7 +324,6 @@ export default function FantasyHub() {
               <button 
                 onClick={() => setShowSyncSuccess(false)}
                 className="h-6 w-6 rounded-md bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                aria-label="Dismiss"
               >
                 <X size={12} />
               </button>
@@ -357,6 +371,20 @@ export default function FantasyHub() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
+                        
+                        {/* 👇 زرار الإضافة للتشكيلة ➕ 👇 */}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToSquad(player);
+                          }}
+                          className="p-2 rounded-lg bg-emerald-900/30 border border-emerald-800 text-emerald-500 hover:text-emerald-400 hover:border-emerald-500/50 transition-all shadow-lg"
+                          title="Add to Squad"
+                        >
+                          <Plus size={14} strokeWidth={3} />
+                        </button>
+                        
+                        {/* زرار المقارنة الأساسي */}
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -380,8 +408,6 @@ export default function FantasyHub() {
 
       {/* Main Workspace */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Sidebar: Player Preview or Tips */}
         <div className="lg:col-span-4 space-y-6">
            <AnimatePresence mode="wait">
              {activePlayer ? (
@@ -430,14 +456,25 @@ export default function FantasyHub() {
                          </div>
                       </div>
                    </div>
+                    
+                   <div className="flex gap-2 w-full">
+                     <button
+                       onClick={() => addToComparison(activePlayer)}
+                       className="flex-1 h-12 rounded-xl bg-indigo-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                     >
+                       <Scale size={14} />
+                       Compare
+                     </button>
+                     {/* زرار إضافة اللاعب من الكارت للتشكيلة */}
+                     <button
+                       onClick={() => addToSquad(activePlayer)}
+                       className="flex-1 h-12 rounded-xl bg-emerald-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+                     >
+                       <Plus size={14} />
+                       Add to Squad
+                     </button>
+                   </div>
 
-                   <button
-                     onClick={() => addToComparison(activePlayer)}
-                     className="w-full h-12 rounded-xl bg-indigo-600 flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-[0.2em] text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
-                   >
-                     <Scale size={14} />
-                     Compare Stats
-                   </button>
                  </div>
                </motion.div>
              ) : (
@@ -459,7 +496,6 @@ export default function FantasyHub() {
            </AnimatePresence>
         </div>
 
-        {/* Comparison Engine */}
         <div className="lg:col-span-8 flex flex-col gap-6">
            {selectedPlayers.length === 0 ? (
              <div className="flex flex-col items-center justify-center rounded-[32px] border border-zinc-800 bg-[#111113] p-12 py-32 text-center shadow-inner group">
@@ -476,7 +512,6 @@ export default function FantasyHub() {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#6366f111,transparent_70%)]" />
                 
                 <div className="bg-[#111113] rounded-[38px] p-10 relative z-10">
-                   {/* Headers */}
                    <div className="grid grid-cols-2 gap-10 mb-16 relative">
                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center text-[10px] font-black text-zinc-700 shadow-xl italic tracking-widest">
                          VS
@@ -506,7 +541,6 @@ export default function FantasyHub() {
                       )}
                    </div>
 
-                   {/* Stats Grid */}
                    {selectedPlayers.length === 2 && (
                      <div className="space-y-10">
                         <PlayerStatRow label="FPL Price" val1={`£${selectedPlayers[0].price}m`} val2={`£${selectedPlayers[1].price}m`} />
@@ -523,17 +557,15 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 👇 القسم الجديد: مُولد التشكيلة (Squad Builder) 👇 */}
+      {/* 👇 استدعاء الملعب وبعتناله الـ squad و الـ removeFromSquad 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-8 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
          <div className="text-center mb-8">
             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
             <p className="text-xs font-black text-zinc-500 uppercase tracking-widest mt-2">Build, Download, and Share with Friends</p>
          </div>
-         <SquadBuilder />
+         <SquadBuilder squad={squad} onRemovePlayer={removeFromSquad} />
       </section>
-      {/* 👆 نهاية القسم الجديد 👆 */}
 
-      {/* Discovery Section */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[40px] p-12 border border-zinc-800 shadow-2xl relative overflow-hidden">
          <div className="absolute bottom-0 right-0 p-12 pointer-events-none opacity-[0.03] text-white">
             <Trophy size={300} strokeWidth={1} />
@@ -590,7 +622,6 @@ export default function FantasyHub() {
          </div>
       </section>
 
-      {/* Comparison Tray */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div
@@ -663,7 +694,6 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* Comparison Modal Overlay */}
       <AnimatePresence>
         {isComparisonOpen && selectedPlayers.length === 2 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
@@ -681,7 +711,6 @@ export default function FantasyHub() {
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
               className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[3rem] border border-zinc-800 bg-[#09090b] shadow-[0_64px_128px_-32px_rgba(0,0,0,1)] ring-1 ring-white/5 flex flex-col"
             >
-              {/* Modal Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-10 py-6 sm:py-8 border-b border-zinc-900 bg-[#111113]/50 gap-4">
                 <div className="flex items-center gap-4">
                    <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0">
@@ -714,17 +743,14 @@ export default function FantasyHub() {
                 </div>
               </div>
 
-              {/* Modal Content */}
               <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-20 relative">
-                   {/* VS Indicator */}
                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none hidden md:block">
                       <div className="h-16 w-16 rounded-full border border-zinc-700 bg-black flex items-center justify-center shadow-2xl">
                          <span className="text-xs font-black text-zinc-500 uppercase italic tracking-widest">VS</span>
                       </div>
                    </div>
 
-                   {/* Player Headers */}
                    {selectedPlayers.map((player, idx) => (
                       <div key={player.id} className={cn("space-y-6", idx === 1 ? "md:text-right" : "text-left")}>
                          <div className={cn("flex items-center gap-6", idx === 1 ? "md:flex-row-reverse" : "flex-row")}>
@@ -745,7 +771,6 @@ export default function FantasyHub() {
                 </div>
 
                 <div className="mt-16 space-y-1">
-                   {/* Staggered container for rows */}
                    <motion.div
                      initial="hidden"
                      animate="visible"
@@ -783,7 +808,7 @@ export default function FantasyHub() {
                       label="Yellow Cards" 
                       val1={selectedPlayers[0].yellowCards} 
                       val2={selectedPlayers[1].yellowCards} 
-                      invert={true} // Lower is better
+                      invert={true} 
                     />
                     <ComparisonStatSection 
                       label="Match Form" 
@@ -799,7 +824,6 @@ export default function FantasyHub() {
                 </div>
               </div>
 
-              {/* Modal Footer */}
               <div className="px-10 py-8 border-t border-zinc-900 bg-[#111113]/50 flex justify-center">
                  <button
                    onClick={clearComparison}
@@ -884,7 +908,6 @@ function PlayerStatRow({ label, val1, val2, highlight = false }: any) {
 
   return (
     <div className="relative group min-h-[60px] flex items-center">
-       {/* Central Label */}
        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <span className="bg-zinc-950 border border-zinc-800 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-indigo-400 group-hover:border-indigo-500/30 transition-all shadow-xl">
              {label}
