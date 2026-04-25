@@ -248,17 +248,39 @@ export default function FantasyHub() {
   const removePlayer = (id: number) => { setSelectedPlayers(selectedPlayers.filter(p => p.id !== id)); if (selectedPlayers.length <= 1) setIsComparisonOpen(false); };
   const clearComparison = () => { setSelectedPlayers([]); setIsComparisonOpen(false); };
 
-  // 👇 خوارزمية زرار Auto Pick 👇
+  // 👇 الخوارزمية المحدثة للـ Auto Pick 👇
   const handleAutoPick = () => {
-    if (allPlayers.length < 30) {
-      alert("استنى ثواني لحد ما باقي اللعيبة تحمل من السيرفر! ⏳");
-      return;
-    }
+    // قاعدة بيانات احتياطية لضمان وجود 15 لاعب دايماً في كل المراكز
+    const fallbackStars = [
+      { id: 901, name: 'Alisson', position: 'Goalkeeper', team: { id: 64, name: 'Liverpool', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' }, price: '5.5', points: 120, form: '5.0', league: 'PL', goals: 0, assists: 1, cleanSheets: 12 },
+      { id: 902, name: 'Ederson', position: 'Goalkeeper', team: { id: 65, name: 'Man City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' }, price: '5.5', points: 115, form: '4.8', league: 'PL', goals: 0, assists: 0, cleanSheets: 10 },
+      { id: 903, name: 'Raya', position: 'Goalkeeper', team: { id: 57, name: 'Arsenal', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' }, price: '5.0', points: 130, form: '5.5', league: 'PL', goals: 0, assists: 0, cleanSheets: 14 },
+      { id: 904, name: 'Pickford', position: 'Goalkeeper', team: { id: 62, name: 'Everton', shortName: 'EVE', crest: 'https://crests.football-data.org/62.png' }, price: '4.5', points: 100, form: '4.0', league: 'PL', goals: 0, assists: 1, cleanSheets: 8 },
+      { id: 905, name: 'Saliba', position: 'Defender', team: { id: 57, name: 'Arsenal', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' }, price: '5.5', points: 140, form: '6.0', league: 'PL', goals: 2, assists: 1, cleanSheets: 14 },
+      { id: 906, name: 'Van Dijk', position: 'Defender', team: { id: 64, name: 'Liverpool', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' }, price: '6.5', points: 120, form: '5.0', league: 'PL', goals: 2, assists: 3, cleanSheets: 9 },
+      { id: 907, name: 'Walker', position: 'Defender', team: { id: 65, name: 'Man City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' }, price: '5.5', points: 110, form: '4.5', league: 'PL', goals: 0, assists: 3, cleanSheets: 10 },
+      { id: 908, name: 'Gabriel', position: 'Defender', team: { id: 57, name: 'Arsenal', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' }, price: '5.0', points: 135, form: '5.5', league: 'PL', goals: 4, assists: 0, cleanSheets: 14 },
+      { id: 909, name: 'Porro', position: 'Defender', team: { id: 73, name: 'Tottenham', shortName: 'TOT', crest: 'https://crests.football-data.org/73.png' }, price: '5.5', points: 115, form: '4.0', league: 'PL', goals: 1, assists: 7, cleanSheets: 6 },
+      { id: 910, name: 'Trippier', position: 'Defender', team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' }, price: '6.5', points: 100, form: '3.5', league: 'PL', goals: 1, assists: 10, cleanSheets: 7 },
+      { id: 911, name: 'White', position: 'Defender', team: { id: 57, name: 'Arsenal', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' }, price: '5.5', points: 125, form: '5.0', league: 'PL', goals: 2, assists: 2, cleanSheets: 12 },
+      { id: 912, name: 'Saka', position: 'Midfielder', team: { id: 57, name: 'Arsenal', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' }, price: '9.0', points: 200, form: '8.0', league: 'PL', goals: 15, assists: 10, cleanSheets: 14 },
+      { id: 913, name: 'Salah', position: 'Midfielder', team: { id: 64, name: 'Liverpool', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' }, price: '13.0', points: 220, form: '8.5', league: 'PL', goals: 18, assists: 10, cleanSheets: 9 },
+      { id: 914, name: 'Foden', position: 'Midfielder', team: { id: 65, name: 'Man City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' }, price: '8.0', points: 180, form: '7.5', league: 'PL', goals: 14, assists: 8, cleanSheets: 10 },
+      { id: 915, name: 'Palmer', position: 'Midfielder', team: { id: 61, name: 'Chelsea', shortName: 'CHE', crest: 'https://crests.football-data.org/61.png' }, price: '6.0', points: 210, form: '9.0', league: 'PL', goals: 20, assists: 10, cleanSheets: 6 },
+      { id: 916, name: 'Son', position: 'Midfielder', team: { id: 73, name: 'Tottenham', shortName: 'TOT', crest: 'https://crests.football-data.org/73.png' }, price: '9.5', points: 190, form: '7.0', league: 'PL', goals: 15, assists: 9, cleanSheets: 6 },
+      { id: 917, name: 'Haaland', position: 'Forward', team: { id: 65, name: 'Man City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' }, price: '14.0', points: 200, form: '8.0', league: 'PL', goals: 20, assists: 5, cleanSheets: 0 },
+      { id: 918, name: 'Watkins', position: 'Forward', team: { id: 58, name: 'Aston Villa', shortName: 'AVL', crest: 'https://crests.football-data.org/58.png' }, price: '8.5', points: 190, form: '7.5', league: 'PL', goals: 18, assists: 12, cleanSheets: 0 },
+      { id: 919, name: 'Isak', position: 'Forward', team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' }, price: '8.0', points: 170, form: '6.5', league: 'PL', goals: 17, assists: 4, cleanSheets: 0 },
+      { id: 920, name: 'Solanke', position: 'Forward', team: { id: 73, name: 'Bournemouth', shortName: 'BOU', crest: 'https://crests.football-data.org/73.png' }, price: '7.0', points: 150, form: '5.5', league: 'PL', goals: 16, assists: 3, cleanSheets: 0 },
+    ];
 
-    // فلترة لعيبة الإنجليزي وترتيبهم بالأقوى (Points/Form)
-    const pool = allPlayers
+    // دمج اللعيبة الحقيقية من الـ API مع الاحتياطية، مع تفضيل داتا الـ API
+    const combinedPool = [...fallbackStars, ...allPlayers]
       .filter(p => p.league === 'PL')
       .sort((a, b) => (parseFloat(b.points) + parseFloat(b.form)) - (parseFloat(a.points) + parseFloat(a.form)));
+
+    // منع تكرار نفس اللاعب لو موجود مرتين
+    const uniquePool = Array.from(new Map(combinedPool.map(item => [item.name, item])).values());
 
     const newSquad = Array(15).fill(null);
     const teamCounts: Record<number, number> = {};
@@ -275,11 +297,11 @@ export default function FantasyHub() {
 
     const pickPlayer = (posTarget: string, count: number) => {
        const picked = [];
-       for (let player of pool) {
+       for (let player of uniquePool) {
           if (picked.length >= count) break;
           if (getPos(player) !== posTarget) continue;
           
-          const teamId = player.team?.id;
+          const teamId = player.team?.id || 999;
           if ((teamCounts[teamId] || 0) >= 3) continue; // ممنوع اكتر من 3 من نفس الفريق
 
           picked.push(player);
@@ -288,12 +310,12 @@ export default function FantasyHub() {
        return picked;
     };
 
-    const pickedGKs = pickPlayer('GK', 2);
-    const pickedDEFs = pickPlayer('DEF', 5);
-    const pickedMIDs = pickPlayer('MID', 5);
     const pickedFWDs = pickPlayer('FWD', 3);
+    const pickedMIDs = pickPlayer('MID', 5);
+    const pickedDEFs = pickPlayer('DEF', 5);
+    const pickedGKs = pickPlayer('GK', 2);
 
-    // توزيعهم في الملعب حسب الأماكن بتاعتنا
+    // توزيعهم في الملعب بدقة الفانتازي
     if (pickedFWDs[0]) newSquad[0] = pickedFWDs[0];
     if (pickedFWDs[1]) newSquad[1] = pickedFWDs[1];
     if (pickedFWDs[2]) newSquad[14] = pickedFWDs[2]; // دكة
@@ -315,8 +337,8 @@ export default function FantasyHub() {
 
     setSquad(newSquad);
 
-    // كابتنة أوتوماتيك لأول لاعب (الأقوى)
-    const bestPlayer = [...newSquad].filter(Boolean).sort((a, b) => parseFloat(b.points) - parseFloat(a.points))[0];
+    // تحديد الكابتن أوتوماتيكياً لأقوى لاعب
+    const bestPlayer = [...newSquad].filter(Boolean).sort((a, b) => parseFloat(b.points || 0) - parseFloat(a.points || 0))[0];
     if (bestPlayer) setCaptainId(bestPlayer.id);
   };
 
@@ -459,7 +481,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 👇 1. قسم "عراف الجولة" (Weekly Predictor) 👇 */}
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2rem] md:rounded-[40px] p-6 md:p-12 border border-indigo-500/30 shadow-2xl relative overflow-hidden mt-8 text-center">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Target size={150} /></div>
         <div className="relative z-10 flex flex-col items-center">
@@ -509,7 +530,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 👇 استدعاء SquadBuilder وربطناه بـ onAutoPick 👇 */}
       <section className="bg-gradient-to-br from-[#111113] to-[#09090b] rounded-[2rem] md:rounded-[40px] p-6 md:p-12 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col items-center mt-8">
          <div className="text-center mb-6 md:mb-8">
             <h2 className="text-xl md:text-2xl font-black text-white uppercase italic tracking-tighter">Squad Builder</h2>
@@ -528,7 +548,7 @@ export default function FantasyHub() {
             onSelectPlayer={setActivePlayer}
             onRoastSquad={generateRoastReport}
             isRoasting={isRoasting}
-            onAutoPick={handleAutoPick} /* 👈 السطر ده اللي بيشغل الخوارزمية */
+            onAutoPick={handleAutoPick} /* 👈 خوارزمية الاختيار التلقائي */
          />
       </section>
 
@@ -728,6 +748,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* نافذة قصف الجبهة الساخرة */}
       <AnimatePresence>
         {roastReport && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10">
