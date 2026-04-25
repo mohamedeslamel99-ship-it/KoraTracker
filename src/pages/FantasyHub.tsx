@@ -257,30 +257,78 @@ export default function FantasyHub() {
     }
   };
 
+  // 🌟 التعديل هنا: خوارزمية ذكية لتقييم التشكيلة واقعياً 🌟
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
-    if (active.length < 11) { alert("⚠️ اختار 11 لاعب أساسي الأول!"); return; }
+    const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
+
+    if (active.length < 11) { alert("⚠️ اختار 11 لاعب أساسي الأول عشان أقدر أحلل التشكيلة صح!"); return; }
+    
     setIsGeneratingAI(true);
+
     setTimeout(() => {
       const totalGoals = active.reduce((sum, p) => sum + (p.goals || 0), 0);
+      const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
+      const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
+      
+      // بنجيب أحسن لاعب في التشكيلة عشان نشوف الكابتن
+      const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+      const isCaptainBest = captainId === bestPlayer?.id;
+
+      // حساب السكور الحقيقي (بنفترض إن تشكيلة أحلام قوية جداً بتجيب حوالي 1100 نقطة)
+      let calculatedScore = Math.floor((totalPoints / 1100) * 100);
+      
+      // تظبيط الأرقام عشان تبقى واقعية بين 40 ل 99
+      if (calculatedScore < 45) calculatedScore = Math.floor(Math.random() * 15) + 45; 
+      if (calculatedScore > 99) calculatedScore = 99;
+
+      const strengths = [];
+      const weaknesses = [];
+
+      // التحليل الذكي لنقاط القوة والضعف
+      if (totalGoals > 60) strengths.push(`هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف مع فرقهم.`);
+      else if (totalGoals > 35) strengths.push(`معدل تهديفي جيد (${totalGoals} هدف)، التشكيلة متوازنة.`);
+      else weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس!`);
+
+      if (totalAssists > 40) strengths.push(`صناع لعب ممتازين: التشكيلة بتضمن نقط من الأسيستات.`);
+
+      if (isCaptainBest && bestPlayer) strengths.push(`اختيار الكابتن (${bestPlayer.name}) مثالي جداً ومضمون.`);
+      else if (bestPlayer) weaknesses.push(`الكابتن غلط.. المفروض تكبتن ${bestPlayer.name} لأنه الأعلى نقاط.`);
+
+      if (bench.length < 4) weaknesses.push(`الدكة مش كاملة، لو حد اتصاب مش هتلاقي بديل ينزلك نقط.`);
+      else if (bench.some(p => parseFloat(p.price || '0') > 7.0)) weaknesses.push(`إنت دافع فلوس كتير جداً في الدكة، ركز عالميزانية الأساسية.`);
+      else strengths.push(`ميزانية الدكة ممتازة واقتصادية جداً.`);
+
+      // ألوان التقييم
+      let ratingColor = "text-emerald-400";
+      let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
+
+      if (calculatedScore < 60) {
+        ratingColor = "text-red-500";
+        ratingBg = "bg-red-500/10 border-red-500/30";
+      } else if (calculatedScore < 80) {
+        ratingColor = "text-yellow-400";
+        ratingBg = "bg-yellow-500/10 border-yellow-500/30";
+      }
+
       setAiReport({ 
-        score: Math.min(60 + totalGoals, 99), 
-        strengths: [`قوة هجومية: فريقك سجل ${totalGoals} هدف.`], 
-        weaknesses: squad.filter(s => s.isBench && s.player).length < 4 ? ["الدكة غير مكتملة."] : [],
-        ratingColor: "text-emerald-400", ratingBg: "bg-emerald-500/10 border-emerald-500/30"
+        score: calculatedScore, 
+        strengths: strengths.slice(0, 3), 
+        weaknesses: weaknesses.slice(0, 2),
+        ratingColor, 
+        ratingBg
       });
+      
       setIsGeneratingAI(false);
     }, 1500);
   };
 
-  // 🔥 التعديل هنا: خوارزمية قصف الجبهات الديناميكية 🔥
   const generateRoastReport = () => {
     const active = squad.filter(s => !s.isBench && s.player);
     if (active.length < 1) { alert("حط لعيبة الأول عشان أعرف أقصف جبهتك! 😂"); return; }
     
     setIsRoasting(true);
 
-    // مكتبة إفيهات قصف الجبهات
     const roasts = [
       "تشكيلة عظيمة.. لو بتلعب في دوري المظاليم! 😂",
       "إنت متأكد إن دي تشكيلة كورة مش فريق كبادي؟ 🤡",
@@ -297,14 +345,13 @@ export default function FantasyHub() {
     ];
 
     setTimeout(() => {
-      // بنختار جملتين عشوائيتين مختلفتين كل مرة
       const r1 = roasts[Math.floor(Math.random() * roasts.length)];
       let r2 = roasts[Math.floor(Math.random() * roasts.length)];
       while(r1 === r2) { r2 = roasts[Math.floor(Math.random() * roasts.length)]; }
 
       setRoastReport([r1, r2]);
       setIsRoasting(false);
-    }, 1500); // 1.5 seconds of suspense 😂
+    }, 1500);
   };
 
   const handleAutoPick = () => {
