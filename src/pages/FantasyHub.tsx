@@ -40,7 +40,6 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
     price = Math.min(base + bonus, 9.5).toFixed(1);
   }
 
-  // نقاط ثابتة وواقعية بناءً على الأهداف والمركز (من غير عشوائية)
   let pointsMultiplier = pos === 'DEF' || pos === 'GK' ? 6 : pos === 'MID' ? 5 : 4;
   let points = (goals * pointsMultiplier) + (assists * 3) + ((id % 20) * 2);
   if (goals === 0 && assists === 0) points = (id % 40) + 10;
@@ -118,22 +117,21 @@ export default function FantasyHub() {
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
 
+  // 🔴 الدوري الإنجليزي فقط 🔴
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: pdScorers } = useSWR(endpoints.getTopScorers('PD'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: saScorers } = useSWR(endpoints.getTopScorers('SA'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: blScorers } = useSWR(endpoints.getTopScorers('BL1'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: fl1Scorers } = useSWR(endpoints.getTopScorers('FL1'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } });
   const [syncedTeams, setSyncedTeams] = useState<number>(() => { try { const saved = localStorage.getItem('kt_sync_progress'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+  // 🔴 تجميع لاعبي الدوري الإنجليزي فقط 🔴
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
+      
       leaguePlayers.forEach(p => { 
         if (p?.id) {
           const pos = getPlayerPosition(p);
@@ -141,13 +139,11 @@ export default function FantasyHub() {
           uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, assists: p.assists || 0, price, form: ((p.id % 50) / 10).toFixed(1), points, position: pos }); 
         }
       });
+
       const combined = [ 
-        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})),
-        ...(pdScorers?.scorers || []).map((s:any) => ({...s, league: 'PD'})),
-        ...(saScorers?.scorers || []).map((s:any) => ({...s, league: 'SA'})),
-        ...(blScorers?.scorers || []).map((s:any) => ({...s, league: 'BL1'})),
-        ...(fl1Scorers?.scorers || []).map((s:any) => ({...s, league: 'FL1'}))
+        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'}))
       ];
+      
       combined.forEach(s => {
         if (s?.player?.id) { 
           const pos = getPlayerPosition(s.player);
@@ -155,9 +151,10 @@ export default function FantasyHub() {
           uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team || { name: 'Unknown' }, goals: s.goals || 0, assists: s.assists || 0, price, form: ((s.player.id % 50) / 10).toFixed(1), points, position: pos }); 
         }
       });
+      
       return Array.from(uniqueMap.values());
     } catch (err) { return []; }
-  }, [plScorers, pdScorers, saScorers, blScorers, fl1Scorers, leaguePlayers]);
+  }, [plScorers, leaguePlayers]);
 
   const globalProspects = useMemo(() => {
     const prospects: any[] = [];
@@ -173,7 +170,7 @@ export default function FantasyHub() {
     return prospects.length > 0 ? prospects : allPlayers.slice(0, 4);
   }, [allPlayers]);
 
-  // 🔍 التعديل هنا: البحث يشتغل من أول حرف وبيجيب نتايج أكتر في قائمة قابلة للتمرير
+  // 🔍 البحث يشتغل من أول حرف
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
     const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 30);
@@ -295,7 +292,6 @@ export default function FantasyHub() {
     }
   };
 
-  // 🤖 التعديل هنا: الذكاء الاصطناعي بيشوف التشكيلة الفعلية ويقيمها بدقة 
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -309,7 +305,6 @@ export default function FantasyHub() {
       const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
       
-      // الخوارزمية بتحسب أحسن لاعب فعلي في التشكيلة الأساسية اللي اليوزر حاططها
       const bestPlayer = [...active].sort((a, b) => {
         const scoreA = (a.goals || 0) * 5 + (a.assists || 0) * 3 + parseFloat(a.price || '0');
         const scoreB = (b.goals || 0) * 5 + (b.assists || 0) * 3 + parseFloat(b.price || '0');
@@ -496,7 +491,6 @@ export default function FantasyHub() {
           <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm outline-none focus:border-indigo-500 transition-colors" />
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
           
-          {/* 🔍 التعديل هنا: قائمة البحث بقت قابلة للتمرير (Scroll) 🔍 */}
           <AnimatePresence>
             {searchResults.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 mt-3 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl max-h-80 overflow-y-auto custom-scrollbar">
