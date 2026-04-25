@@ -94,8 +94,6 @@ export default function FantasyHub() {
   const { data: saScorers } = useSWR(endpoints.getTopScorers('SA'), fetchFootballData, { revalidateOnFocus: false });
   const { data: blScorers } = useSWR(endpoints.getTopScorers('BL1'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fl1Scorers } = useSWR(endpoints.getTopScorers('FL1'), fetchFootballData, { revalidateOnFocus: false });
-  
-  // 🔴 التعديل هنا: سحب كل ماتشات الموسم بدل الماتشات القادمة بس
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } });
@@ -285,6 +283,7 @@ export default function FantasyHub() {
     }, 1000);
   };
 
+  // 🌟 التعديل هنا: خوارزمية ذكية لاختيار اللعيبة الأساسية والقوية 🌟
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
     const gks = pool.filter(p => p.position === 'GK');
@@ -295,7 +294,20 @@ export default function FantasyHub() {
     if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
       alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
     }
-    const sorted = [...pool].sort((a, b) => (b.goals || 0) - (a.goals || 0));
+    
+    // دالة لحساب "قوة اللاعب" بناءً على كل إحصائياته عشان نختار أحسن ناس
+    const calculatePlayerPower = (p: any) => {
+      const goals = p.goals || 0;
+      const assists = p.assists || 0;
+      const price = parseFloat(p.price || 0);
+      const points = p.points || 0;
+      // بنجمع العوامل دي: الأهداف الأهم، وبعدها السعر والنقاط كدليل على إن اللاعب أساسي ونجم
+      return (goals * 25) + (assists * 15) + points + (price * 5);
+    };
+
+    // ترتيب اللاعبين بناءً على خوارزمية القوة (مش الأهداف بس)
+    const sorted = [...pool].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
+    
     const teamCounts: any = {};
     const pick = (pos: string, count: number) => {
       const picked = [];
@@ -308,6 +320,7 @@ export default function FantasyHub() {
       }
       return picked;
     };
+    
     const f = pick('FWD', 3); const m = pick('MID', 5); const d = pick('DEF', 5); const g = pick('GK', 2);
     
     const newSquad = [
@@ -331,7 +344,6 @@ export default function FantasyHub() {
     if (f[0]) setCaptainId(f[0].id);
   };
 
-  // 🔴 التعديل هنا: خوارزمية استخراج الجولة الحالية وإظهار الماتشات الملعوبة
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     
@@ -342,7 +354,6 @@ export default function FantasyHub() {
       return acc; 
     }, {});
 
-    // البحث عن الجولة الحالية (أول جولة فيها ماتش لسه متلعبش أو شغال دلوقتي)
     let currentMatchday = 1;
     const matchdays = Object.keys(grouped).map(Number).sort((a,b)=>a-b);
     for (const md of matchdays) {
@@ -354,7 +365,6 @@ export default function FantasyHub() {
       }
     }
 
-    // إرجاع الجولة الحالية والجولتين اللي بعدها
     return matchdays
       .filter(md => md >= currentMatchday)
       .slice(0, 3)
@@ -486,7 +496,6 @@ export default function FantasyHub() {
                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-6 flex justify-between items-center"><span>Gameweek {gw.gw}</span> <div className="h-1 w-1 bg-indigo-500 rounded-full animate-pulse" /></p>
                    <div className="space-y-3 relative max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
                      {gw.matches.map((m:any) => {
-                       // 🔴 التعديل هنا: إظهار النتيجة للماتشات الملعوبة واللايف
                        const isFinished = m.status === 'FINISHED';
                        const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
                        const homeScore = m.score?.fullTime?.home ?? '-';
