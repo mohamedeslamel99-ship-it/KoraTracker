@@ -10,14 +10,15 @@ import SquadBuilder from '../components/SquadBuilder';
 export default function FantasyHub() {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  
+  // States الخاصة بالمقارنة (كانت ناقصة عندك)
   const [selectedPlayers, setSelectedPlayers] = useState<any[]>([]);
-  const [activePlayer, setActivePlayer] = useState<any>(null);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   
+  const [activePlayer, setActivePlayer] = useState<any>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiReport, setAiReport] = useState<any>(null);
-
   const [isRoasting, setIsRoasting] = useState(false);
   const [roastReport, setRoastReport] = useState<string[] | null>(null);
   const [predictedPlayer, setPredictedPlayer] = useState<any>(null);
@@ -28,12 +29,10 @@ export default function FantasyHub() {
     const saved = localStorage.getItem('kt_saved_squad');
     return saved ? JSON.parse(saved) : Array(15).fill(null);
   });
-  
   const [captainId, setCaptainId] = useState<number | null>(() => {
     const saved = localStorage.getItem('kt_captain');
     return saved ? JSON.parse(saved) : null;
   });
-
   const [viceCaptainId, setViceCaptainId] = useState<number | null>(() => {
     const saved = localStorage.getItem('kt_vice_captain');
     return saved ? JSON.parse(saved) : null;
@@ -60,10 +59,14 @@ export default function FantasyHub() {
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
 
-  // APIs
+  // APIs (سحب الـ 5 دوريات الكبرى عشان البحث والمقارنات)
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
+  const { data: pdScorers } = useSWR(endpoints.getTopScorers('PD'), fetchFootballData, { revalidateOnFocus: false });
+  const { data: saScorers } = useSWR(endpoints.getTopScorers('SA'), fetchFootballData, { revalidateOnFocus: false });
+  const { data: blScorers } = useSWR(endpoints.getTopScorers('BL1'), fetchFootballData, { revalidateOnFocus: false });
+  const { data: fl1Scorers } = useSWR(endpoints.getTopScorers('FL1'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches?status=SCHEDULED', fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } });
@@ -71,24 +74,29 @@ export default function FantasyHub() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'cooling' | 'staggering' | 'synced'>('idle');
 
-  // تجميع كل اللاعبين مع دمج إحصائيات الهدافين
+  // تجميع كل اللاعبين مع دمج إحصائيات الهدافين من كل الدوريات
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
       leaguePlayers.forEach(p => { 
         if (p?.id) uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, price: p.price ?? '5.0', form: p.form ?? '0.0', points: p.points ?? 0 }); 
       });
-      const combined = [ ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})) ];
+      const combined = [ 
+        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})),
+        ...(pdScorers?.scorers || []).map((s:any) => ({...s, league: 'PD'})),
+        ...(saScorers?.scorers || []).map((s:any) => ({...s, league: 'SA'})),
+        ...(blScorers?.scorers || []).map((s:any) => ({...s, league: 'BL1'})),
+        ...(fl1Scorers?.scorers || []).map((s:any) => ({...s, league: 'FL1'}))
+      ];
       combined.forEach(s => {
         if (s?.player?.id) { 
-          uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team, goals: s.goals || 0, assists: s.assists ?? 0, price: (5 + Math.random() * 7).toFixed(1), form: (2 + Math.random() * 6).toFixed(1), points: Math.floor(Math.random() * 120) + 40, position: s.player.position }); 
+          uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team || { name: 'Unknown' }, goals: s.goals || 0, assists: s.assists ?? 0, price: (5 + Math.random() * 7).toFixed(1), form: (2 + Math.random() * 6).toFixed(1), points: Math.floor(Math.random() * 120) + 40, position: s.player.position || 'Forward' }); 
         }
       });
       return Array.from(uniqueMap.values());
     } catch (err) { return []; }
-  }, [plScorers, leaguePlayers]);
+  }, [plScorers, pdScorers, saScorers, blScorers, fl1Scorers, leaguePlayers]);
 
-  // ✨ ميزة الـ 4 لاعبين من فرق مختلفة ✨
   const globalProspects = useMemo(() => {
     const prospects: any[] = [];
     const seenTeams = new Set();
@@ -141,7 +149,26 @@ export default function FantasyHub() {
     return () => clearTimeout(timer);
   }, [search, allPlayers]);
 
+  // الدوال اللي كانت ناقصة عندك (المقارنات)
+  const addToComparison = (player: any) => { 
+    if (selectedPlayers.find(p => p.id === player.id)) return; 
+    if (selectedPlayers.length >= 2) { setSelectedPlayers([selectedPlayers[1], player]); } 
+    else { setSelectedPlayers([...selectedPlayers, player]); } 
+  };
+  const removePlayer = (id: number) => { 
+    setSelectedPlayers(selectedPlayers.filter(p => p.id !== id)); 
+    if (selectedPlayers.length <= 1) setIsComparisonOpen(false); 
+  };
+  const clearComparison = () => { setSelectedPlayers([]); setIsComparisonOpen(false); };
+  const handleShare = () => {
+    if (selectedPlayers.length !== 2) return;
+    const [p1, p2] = selectedPlayers;
+    const text = `📊 KoraTracker Audit:\n\n${p1.name} VS ${p2.name}\n\nGoals: ${p1.goals || 0} - ${p2.goals || 0}\nPoints: ${p1.points || 0} - ${p2.points || 0}\n\nAnalyze real API stats on KoraTracker!`;
+    navigator.clipboard.writeText(text); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000);
+  };
+
   const addToSquad = (player: any) => {
+    if (player.league && player.league !== 'PL') { alert(`❌ عذراً! مسموح بوضع لاعبي الدوري الإنجليزي فقط.`); return; }
     if (squad.some(p => p?.id === player.id)) return;
     const sameTeamCount = squad.filter(p => p !== null && p.team?.id === player.team?.id).length;
     if (sameTeamCount >= 3) { alert("ممنوع أكتر من 3 لعيبة من نفس الفريق!"); return; }
@@ -177,7 +204,7 @@ export default function FantasyHub() {
 
   const generateRoastReport = () => {
     const active = squad.filter(p => p !== null);
-    if (active.length < 11) return;
+    if (active.length < 11) { alert("حط لعيبة الأول!"); return; }
     setIsRoasting(true);
     setTimeout(() => {
       setRoastReport(["تشكيلة عظيمة.. بس ياريت متلعبش بيها الأسبوع ده عشان صحتك! 😂"]);
@@ -231,7 +258,7 @@ export default function FantasyHub() {
   }, [fixturesData]);
 
   return (
-    <div className="space-y-12 pb-20 max-w-6xl mx-auto px-4 sm:px-6"> 
+    <div className="space-y-12 pb-32 max-w-6xl mx-auto px-4 sm:px-6"> 
       <header className="pt-12 text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-64 w-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
         <h1 className="text-4xl md:text-5xl font-black text-white uppercase italic">Fantasy <span className="text-indigo-500">Hub</span></h1>
@@ -247,16 +274,19 @@ export default function FantasyHub() {
           </div>
         )}
         <div className="relative group">
-          <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm" />
+          <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm outline-none focus:border-indigo-500 transition-colors" />
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
           <AnimatePresence>
             {searchResults.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 mt-3 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl">
                 {searchResults.map((p) => (
-                  <div key={p.id} onClick={() => { setActivePlayer(p); setSearch(''); setSearchResults([]); }} className="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-0">
+                  <div key={p.id} onClick={() => { setActivePlayer(p); setSearch(''); setSearchResults([]); }} className="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-0 group">
                     <img src={p.team?.crest} className="h-6 w-6 object-contain" referrerPolicy="no-referrer" />
                     <span className="flex-1 text-white font-black text-xs uppercase">{p.name}</span>
-                    <button onClick={(e) => { e.stopPropagation(); addToSquad(p); }} className="p-2 bg-emerald-900/30 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><Plus size={14} /></button>
+                    <div className="flex gap-2">
+                       <button onClick={(e) => { e.stopPropagation(); addToComparison(p); }} className="p-2 bg-zinc-900 text-zinc-400 rounded-lg hover:bg-indigo-500 hover:text-white transition-all"><Scale size={14} /></button>
+                       <button onClick={(e) => { e.stopPropagation(); addToSquad(p); }} className="p-2 bg-emerald-900/30 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><Plus size={14} /></button>
+                    </div>
                   </div>
                 ))}
               </motion.div>
@@ -268,31 +298,37 @@ export default function FantasyHub() {
       {/* المقارنة والبيانات */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4">
-          {activePlayer ? (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="rounded-3xl border border-indigo-500/30 bg-[#111113] p-6 shadow-2xl relative overflow-hidden">
-               <div className="flex justify-between mb-6">
-                 <img src={activePlayer.team?.crest} className="h-14 w-14 object-contain" referrerPolicy="no-referrer" />
-                 <button onClick={() => setActivePlayer(null)} className="text-zinc-500 hover:text-white"><X size={18} /></button>
-               </div>
-               <h3 className="text-xl font-black text-white uppercase italic">{activePlayer.name}</h3>
-               <div className="grid grid-cols-2 gap-3 mt-6">
-                 <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Goals</p><p className="text-xl font-black text-white">{activePlayer.goals || 0}</p></div>
-                 <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Assists</p><p className="text-xl font-black text-white">{activePlayer.assists || 0}</p></div>
-               </div>
-               <button onClick={() => addToSquad(activePlayer)} className="w-full mt-6 bg-emerald-600 h-12 rounded-xl text-white font-black uppercase text-xs hover:bg-emerald-500 transition-all shadow-lg active:scale-95">Add to Squad</button>
-            </motion.div>
-          ) : (
-            <div className="rounded-3xl border border-dashed border-zinc-800 p-20 text-center bg-[#09090b]/50">
-               <Ghost className="mx-auto text-zinc-800" size={30} />
-               <p className="mt-4 text-[10px] text-zinc-600 uppercase font-black tracking-widest">Awaiting Input</p>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {activePlayer ? (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-3xl border border-indigo-500/30 bg-[#111113] p-6 shadow-2xl relative overflow-hidden">
+                 <div className="flex justify-between mb-6">
+                   <img src={activePlayer.team?.crest} className="h-14 w-14 object-contain" referrerPolicy="no-referrer" />
+                   <button onClick={() => setActivePlayer(null)} className="text-zinc-500 hover:text-white"><X size={18} /></button>
+                 </div>
+                 <h3 className="text-xl font-black text-white uppercase italic truncate">{activePlayer.name}</h3>
+                 <p className="text-[10px] text-zinc-500 font-bold tracking-widest mt-1 uppercase">{activePlayer.league === 'PL' ? 'Premier League' : 'Global'}</p>
+                 <div className="grid grid-cols-2 gap-3 mt-6">
+                   <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Goals</p><p className="text-xl font-black text-white">{activePlayer.goals || 0}</p></div>
+                   <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Assists</p><p className="text-xl font-black text-white">{activePlayer.assists || 0}</p></div>
+                 </div>
+                 <div className="flex gap-2 mt-6">
+                    <button onClick={() => addToComparison(activePlayer)} className="flex-1 bg-indigo-600 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"><Scale size={14}/> Compare</button>
+                    <button onClick={() => addToSquad(activePlayer)} className="flex-1 bg-emerald-600 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"><Plus size={14}/> Add</button>
+                 </div>
+              </motion.div>
+            ) : (
+              <motion.div className="rounded-3xl border border-dashed border-zinc-800 p-20 text-center bg-[#09090b]/50">
+                 <Ghost className="mx-auto text-zinc-800" size={30} />
+                 <p className="mt-4 text-[10px] text-zinc-600 uppercase font-black tracking-widest">Awaiting Input</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <div className="lg:col-span-8">
-           <div className="rounded-[2rem] border border-zinc-800 bg-[#111113] p-8 md:p-12 text-center shadow-inner">
+           <div className="rounded-[2rem] border border-zinc-800 bg-[#111113] p-8 md:p-12 text-center shadow-inner h-full flex flex-col items-center justify-center min-h-[300px]">
              <TrendingUp className="mx-auto text-zinc-800 mb-4" size={40} />
              <h2 className="text-lg font-black text-zinc-700 uppercase italic tracking-widest">Comparison Labs</h2>
-             <p className="text-[10px] text-zinc-800 uppercase mt-2 tracking-widest font-black">Select players to launch side-by-side audit</p>
+             <p className="text-[10px] text-zinc-800 uppercase mt-2 tracking-widest font-black">Select up to 2 players from search to compare stats</p>
            </div>
         </div>
       </section>
@@ -314,23 +350,21 @@ export default function FantasyHub() {
 
       {/* الملعب */}
       <section className="flex flex-col items-center">
-         <SquadBuilder squad={squad} onRemovePlayer={(idx:number, id:number)=> { const n=[...squad]; n[idx]=null; setSquad(n); }} totalBudget={totalBudget} captainId={captainId} viceCaptainId={viceCaptainId} setCaptain={setCaptainId} setViceCaptain={setViceCaptainId} onGenerateAI={generateAIReport} isGeneratingAI={isGeneratingAI} onSelectPlayer={setActivePlayer} onRoastSquad={generateRoastReport} isRoasting={isRoasting} onAutoPick={handleAutoPick} />
+         <SquadBuilder squad={squad} onRemovePlayer={(idx:number, id:number)=> { const n=[...squad]; n[idx]=null; setSquad(n); if (captainId === id) setCaptainId(null); if (viceCaptainId === id) setViceCaptainId(null); }} totalBudget={totalBudget} captainId={captainId} viceCaptainId={viceCaptainId} setCaptain={setCaptainId} setViceCaptain={setViceCaptainId} onGenerateAI={generateAIReport} isGeneratingAI={isGeneratingAI} onSelectPlayer={setActivePlayer} onRoastSquad={generateRoastReport} isRoasting={isRoasting} onAutoPick={handleAutoPick} />
       </section>
 
-      {/* الماتشات القادمة - التصميم البريميوم المحدث 💎 */}
+      {/* الماتشات القادمة */}
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
          <h2 className="text-xl md:text-2xl font-black text-white uppercase italic mb-10 flex items-center gap-3 relative z-10"><CalendarDays className="text-indigo-400" /> Upcoming Fixtures</h2>
-         
          {fixturesLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>
          ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                {upcomingGameweeks.map(gw => (
-                 <div key={gw.gw} className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-6 flex flex-col hover:border-indigo-500/30 transition-colors group">
+                 <div key={gw.gw} className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-6 flex flex-col hover:border-indigo-500/30 transition-colors">
                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-6 flex justify-between items-center"><span>Gameweek {gw.gw}</span> <div className="h-1 w-1 bg-indigo-500 rounded-full animate-pulse" /></p>
-                   {/* 👇 الحاوية الجديدة للـ Scroll 👇 */}
-                   <div className="space-y-3 relative max-h-[280px] md:max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                   <div className="space-y-3 relative max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
                      {gw.matches.map((m:any) => (
                        <div key={m.id} className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition-all cursor-default">
                            <span className="text-[10px] font-black text-white uppercase w-12 text-left truncate" title={m.homeTeam.name}>{m.homeTeam.tla || m.homeTeam.shortName?.substring(0,3)}</span>
@@ -345,7 +379,7 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* المواهب العالمية - 4 فرق مختلفة ✨ */}
+      {/* المواهب العالمية */}
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
@@ -356,14 +390,88 @@ export default function FantasyHub() {
                  <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
                  <div className="flex justify-between items-center mt-5">
                     <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
-                    <button onClick={()=>addToSquad(p)} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all shadow-inner"><Plus size={12} strokeWidth={3}/></button>
+                    <div className="flex gap-1">
+                       <button onClick={(e)=>{e.stopPropagation(); addToComparison(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all"><Scale size={12}/></button>
+                       <button onClick={(e)=>{e.stopPropagation(); addToSquad(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all"><Plus size={12}/></button>
+                    </div>
                  </div>
               </div>
             ))}
          </div>
       </section>
 
-      {/* Modals (Predictor, AI Report, Roast) - No changes needed to logic */}
+      {/* ========================================= */}
+      {/* 🔴 الجزء اللي كان ممسوح (شريط ونافذة المقارنة) 🔴 */}
+      {/* ========================================= */}
+      <AnimatePresence>
+        {selectedPlayers.length > 0 && (
+          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-2xl px-4 py-3 md:px-6 md:py-4 rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white"><Scale size={18} /></div>
+                <div>
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Comparison Tray</h4>
+                  <p className="text-[9px] font-black text-zinc-500 uppercase">{selectedPlayers.length} / 2 Selected</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {selectedPlayers.map(p => (
+                  <div key={p.id} className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-2">
+                    <img src={p.team?.crest} className="h-4 w-4 object-contain" />
+                    <span className="text-[10px] font-black text-zinc-300 uppercase">{p.name.split(' ').pop()}</span>
+                    <button onClick={() => removePlayer(p.id)} className="text-zinc-600 hover:text-red-500"><X size={12} /></button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button onClick={clearComparison} className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white"><Trash2 size={16} /></button>
+                <button disabled={selectedPlayers.length < 2} onClick={() => setIsComparisonOpen(true)} className={cn("flex-1 px-6 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all", selectedPlayers.length === 2 ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-zinc-800 text-zinc-600 cursor-not-allowed")}>Compare</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isComparisonOpen && selectedPlayers.length === 2 && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsComparisonOpen(false)} className="absolute inset-0 bg-black/95 backdrop-blur-md cursor-zoom-out" />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 40 }} className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[3rem] border border-zinc-800 bg-[#09090b] shadow-2xl flex flex-col">
+              <div className="flex justify-between items-center px-8 py-6 border-b border-zinc-900 bg-[#111113]/50">
+                <div className="flex items-center gap-4">
+                   <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white"><BarChart3 size={18} /></div>
+                   <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">Audit</h2>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={handleShare} className={cn("px-6 h-12 rounded-2xl border flex items-center gap-2 text-[10px] font-black uppercase transition-all", copySuccess ? "bg-emerald-500 border-emerald-400 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white")}><Share2 size={14} /> {copySuccess ? 'Copied!' : 'Share'}</button>
+                  <button onClick={() => setIsComparisonOpen(false)} className="h-12 w-12 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-500 flex items-center justify-center hover:text-white"><X size={20} /></button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                <div className="flex justify-between items-center gap-4 relative mb-16">
+                   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="h-12 w-12 rounded-full border border-zinc-700 bg-black flex items-center justify-center"><span className="text-[10px] font-black text-zinc-500 uppercase italic">VS</span></div></div>
+                   {selectedPlayers.map((player, idx) => (
+                      <div key={player.id} className={cn("flex-1 flex flex-col", idx === 1 ? "items-end text-right" : "items-start text-left")}>
+                         <div className={cn("flex items-center gap-6", idx === 1 && "flex-row-reverse")}>
+                            <div className="h-24 w-24 rounded-[2rem] bg-zinc-900 border border-zinc-800 p-5 shrink-0"><img src={player.team?.crest} className="h-full w-full object-contain" /></div>
+                            <div><h3 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none mb-2">{player.name}</h3><p className="text-sm font-black text-indigo-500 uppercase tracking-[0.2em]">{player.team?.name}</p></div>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+                <div className="space-y-1">
+                    <ComparisonStatSection label="Goals" val1={selectedPlayers[0].goals || 0} val2={selectedPlayers[1].goals || 0} />
+                    <ComparisonStatSection label="Assists" val1={selectedPlayers[0].assists || 0} val2={selectedPlayers[1].assists || 0} />
+                    <ComparisonStatSection label="Market Value" val1={selectedPlayers[0].price} val2={selectedPlayers[1].price} suffix="m" prefix="£" />
+                    <ComparisonStatSection label="Season Points" val1={selectedPlayers[0].points || 0} val2={selectedPlayers[1].points || 0} />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* النوافذ التانية (الذكاء الاصطناعي والتوقع) */}
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
@@ -412,6 +520,38 @@ export default function FantasyHub() {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// =========================================
+// دوال مساعدة لليوزر إنترفيس (كانت ممسوحة برضه)
+// =========================================
+
+function ComparisonStatSection({ label, val1, val2, suffix = '', prefix = '', invert = false }: any) {
+  const v1 = parseFloat(String(val1 ?? '0').replace(prefix, '').replace(suffix, '')) || 0;
+  const v2 = parseFloat(String(val2 ?? '0').replace(prefix, '').replace(suffix, '')) || 0;
+  const total = Math.max(v1 + v2, 1);
+  const p1 = (v1 / total) * 100;
+  const p2 = (v2 / total) * 100;
+  const isBetter1 = invert ? v1 < v2 : v1 > v2;
+  const isBetter2 = invert ? v2 < v1 : v2 > v1;
+
+  return (
+    <div className="py-6 border-b border-zinc-900/50 last:border-0 group">
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-left w-32 flex items-center gap-2">
+             <span className={cn("text-lg font-black tabular-nums tracking-tighter flex items-center gap-1", isBetter1 ? "text-emerald-400" : "text-zinc-600")}>{isBetter1 && <Crown size={12} className="text-emerald-400" />}{prefix}{val1}{suffix}</span>
+          </div>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 group-hover:text-indigo-400 transition-colors text-center">{label}</h4>
+          <div className="text-right w-32 flex items-center justify-end gap-2">
+             <span className={cn("text-lg font-black tabular-nums tracking-tighter flex items-center gap-1", isBetter2 ? "text-emerald-400" : "text-zinc-600")}>{prefix}{val2}{suffix}{isBetter2 && <Crown size={12} className="text-emerald-400" />}</span>
+          </div>
+       </div>
+       <div className="h-2 w-full flex rounded-full bg-zinc-900/50 overflow-hidden ring-1 ring-white/5">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${p1}%` }} className={cn("h-full transition-all duration-300", isBetter1 ? "bg-emerald-500" : "bg-zinc-800")} />
+          <motion.div initial={{ width: 0 }} animate={{ width: `${p2}%` }} className={cn("h-full transition-all duration-300", isBetter2 ? "bg-emerald-500" : "bg-zinc-800 border-l border-zinc-950")} />
+       </div>
     </div>
   );
 }
