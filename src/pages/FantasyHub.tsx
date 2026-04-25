@@ -47,30 +47,6 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   return { price, points };
 };
 
-// 🛡️ قاعدة بيانات احتياطية
-const fallbackDb = [
-  { id: 3754, name: 'Mohamed Salah', position: 'Offence', goals: 20, assists: 10, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 3823, name: 'Erling Haaland', position: 'Offence', goals: 25, assists: 5, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 8004, name: 'Bukayo Saka', position: 'Midfield', goals: 16, assists: 10, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 8011, name: 'Cole Palmer', position: 'Midfield', goals: 22, assists: 11, team: { id: 61, name: 'Chelsea FC', shortName: 'CHE', crest: 'https://crests.football-data.org/61.png' } },
-  { id: 3794, name: 'Son Heung-min', position: 'Midfield', goals: 17, assists: 9, team: { id: 73, name: 'Tottenham', shortName: 'TOT', crest: 'https://crests.football-data.org/73.png' } },
-  { id: 3811, name: 'Ollie Watkins', position: 'Offence', goals: 19, assists: 13, team: { id: 58, name: 'Aston Villa', shortName: 'AVL', crest: 'https://crests.football-data.org/58.png' } },
-  { id: 3824, name: 'Kevin De Bruyne', position: 'Midfield', goals: 4, assists: 10, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 3825, name: 'Phil Foden', position: 'Midfield', goals: 18, assists: 8, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 8005, name: 'Martin Ødegaard', position: 'Midfield', goals: 8, assists: 10, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 3755, name: 'Virgil van Dijk', position: 'Defence', goals: 2, assists: 2, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 3756, name: 'Trent Alexander-Arnold', position: 'Defence', goals: 3, assists: 4, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 8006, name: 'William Saliba', position: 'Defence', goals: 2, assists: 1, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 8007, name: 'Gabriel Magalhães', position: 'Defence', goals: 4, assists: 0, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 3826, name: 'Ederson', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 3757, name: 'Alisson', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 8008, name: 'David Raya', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 9001, name: 'Alexander Isak', position: 'Offence', goals: 21, assists: 2, team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' } },
-  { id: 9002, name: 'Anthony Gordon', position: 'Midfield', goals: 11, assists: 10, team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' } },
-  { id: 9003, name: 'Jarrod Bowen', position: 'Midfield', goals: 16, assists: 6, team: { id: 73, name: 'West Ham', shortName: 'WHU', crest: 'https://crests.football-data.org/563.png' } },
-  { id: 9004, name: 'Dominic Solanke', position: 'Offence', goals: 19, assists: 3, team: { id: 1044, name: 'Bournemouth', shortName: 'BOU', crest: 'https://crests.football-data.org/1044.png' } }
-];
-
 const defaultSquadStructure = [
   { role: 'GK', isBench: false, player: null },
   { role: 'DEF', isBench: false, player: null },
@@ -101,7 +77,6 @@ export default function FantasyHub() {
   const [aiReport, setAiReport] = useState<any>(null);
   const [isRoasting, setIsRoasting] = useState(false);
   const [roastReport, setRoastReport] = useState<string[] | null>(null);
-  
   const [predictedPlayer, setPredictedPlayer] = useState<any>(null);
   const [showPredictorModal, setShowPredictorModal] = useState(false);
   const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
@@ -165,12 +140,6 @@ export default function FantasyHub() {
     try {
       const uniqueMap = new Map();
       
-      fallbackDb.forEach(p => {
-         const pos = getPlayerPosition(p);
-         const { price, points } = getRealisticFPLData(p.name, pos, p.goals || 0, p.assists || 0, p.id);
-         uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, assists: p.assists || 0, price, form: '8.0', points, position: pos });
-      });
-      
       leaguePlayers.forEach(p => { 
         if (p?.id) {
           const pos = getPlayerPosition(p);
@@ -230,10 +199,10 @@ export default function FantasyHub() {
               setSyncedTeams(i + 1); i++; 
               localStorage.setItem('kt_sync_progress', (i).toString());
             }
-            await new Promise(r => setTimeout(r, 6000));
+            await new Promise(r => setTimeout(r, 5000));
           } catch (err: any) { 
             i++; 
-            await new Promise(r => setTimeout(r, 3000)); 
+            await new Promise(r => setTimeout(r, 2000)); 
           }
         }
         setIsSyncing(false);
@@ -341,76 +310,95 @@ export default function FantasyHub() {
     }
   };
 
+  // 🧠 خوارزمية التقييم الديناميكية الجديدة (Real AI Analysis)
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
 
     if (active.length < 11) { alert("⚠️ اختار 11 لاعب أساسي الأول عشان أقدر أحلل التشكيلة صح!"); return; }
     
-    // تصفير أي تقارير قديمة وإظهار اللودينج في الشريط الجانبي
-    setAiReport(null);
-    setRoastReport(null);
-    setActivePlayer(null);
     setIsGeneratingAI(true);
 
     setTimeout(() => {
+      // 1. حساب إحصائيات التشكيلة
       const totalGoals = active.reduce((sum, p) => sum + (p.goals || 0), 0);
+      const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
       const totalCost = active.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0) + bench.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0);
+      
       const defPoints = active.filter(p => p.position === 'DEF' || p.position === 'GK').reduce((sum, p) => sum + (p.points || 0), 0);
       const attPoints = active.filter(p => p.position === 'FWD' || p.position === 'MID').reduce((sum, p) => sum + (p.points || 0), 0);
 
+      // تحديد أفضل لاعب عشان نقيمه بالكابتن
       const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
       const bestFwd = active.filter(p => p.position === 'FWD').sort((a,b) => (b.goals || 0) - (a.goals || 0))[0];
       const captainPlayer = active.find(p => p.id === captainId);
       const isCaptainBest = captainId === bestPlayer?.id;
 
+      // 2. حساب السكور الحقيقي (متوسط قوي في الفانتازي بيبقى 950-1000 نقطة)
       let baseScore = (totalPoints / 950) * 100;
+
+      // خصم نقط لو عديت الميزانية الـ 100م
       if (totalCost > 100) baseScore -= (totalCost - 100) * 2;
-      if (isCaptainBest) baseScore += 5;
+      if (isCaptainBest) baseScore += 5; // مكافأة
 
       let finalScore = Math.floor(Math.max(30, Math.min(99, baseScore)));
-      finalScore += Math.floor(Math.random() * 5) - 2;
+      finalScore += Math.floor(Math.random() * 5) - 2; // عشوائية خفيفة عشان تحس بالتغيير
       finalScore = Math.max(30, Math.min(99, finalScore));
 
+      // 3. تحليل نقاط القوة والضعف
       const strengths = [];
       const weaknesses = [];
 
+      // الهجوم
       if (totalGoals > 50) {
-        strengths.push(bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`);
+        const phrases = [
+          `هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف، هجومك مرعب!`,
+          `ماكينة أهداف: التشكيلة محققة ${totalGoals} جول في الواقع.`,
+          bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`
+        ];
+        strengths.push(phrases[Math.floor(Math.random() * phrases.length)]);
       } else {
-        weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس!`);
+        weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس! محتاج مهاجمين أشرس.`);
       }
 
+      // الدفاع
       if (defPoints > attPoints * 0.6) {
-        strengths.push(`دفاعك صلب وبيجمع نقط ممتازة جداً.`);
+        strengths.push(`دفاعك صلب وبيجمع نقط ممتازة جداً مقارنة بخط الهجوم.`);
       } else if (defPoints < 150) {
-        weaknesses.push(`خط الدفاع شوارع وبيخسر نقط كتير.`);
+        weaknesses.push(`خط الدفاع شوارع وبيخسر نقط كتير، ركز على لعيبة بتجيب Clean Sheets.`);
       }
 
+      // الميزانية
       if (totalCost > 100.5) {
-        weaknesses.push(`ميزانيتك تخطت الـ 100 مليون (£${totalCost.toFixed(1)}m)! غير قانوني.`);
+        weaknesses.push(`ميزانيتك تخطت الـ 100 مليون (£${totalCost.toFixed(1)}m)! ده مش قانوني في الفانتازي لازم تبيع حد غالي.`);
       } else if (totalCost < 90) {
-        weaknesses.push(`سايب فلوس كتير في البنك (£${(100 - totalCost).toFixed(1)}m).`);
+        weaknesses.push(`إنت سايب فلوس كتير في البنك (£${(100 - totalCost).toFixed(1)}m)، استثمرها في كابتن قوي.`);
       } else {
-        strengths.push(`إدارة الميزانية ممتازة جداً ومحسوبة بالمللي.`);
+        strengths.push(`إدارة الميزانية ممتازة جداً ومحسوبة بالمللي (£${totalCost.toFixed(1)}m).`);
       }
 
+      // الكابتن
       if (captainPlayer) {
         if (isCaptainBest) {
-          strengths.push(`اختيار الكابتن (${captainPlayer.name.split(' ').pop()}) مثالي.`);
+          strengths.push(`اختيار الكابتن (${captainPlayer.name.split(' ').pop()}) مثالي ومبني على أعلى إحصائيات.`);
         } else {
-          weaknesses.push(`الكابتن غلط.. الأفضل تكبتن ${bestPlayer?.name.split(' ').pop()}.`);
+          weaknesses.push(`مضيع نقط الكابتنة على ${captainPlayer.name.split(' ').pop()}.. الأفضل تكبتن ${bestPlayer?.name.split(' ').pop()}.`);
         }
       }
 
+      // الدكة
       if (bench.length < 4) {
-        weaknesses.push(`الدكة مش كاملة، لو حد اتصاب مش هتلاقي بديل.`);
+        weaknesses.push(`دكة البدلاء بتاعتك مش كاملة، لو لاعب اتصاب أو قعد احتياطي هتلبس في الحيط.`);
+      } else if (bench.some(p => parseFloat(p.price || '0') > 6.5)) {
+        weaknesses.push(`دافع مبالغ ضخمة في لعيبة دكة، بيع حد منهم وهات أسياي قوي.`);
       }
 
+      // لخبطة المصفوفة عشان الجمل تتغير كل مرة
       strengths.sort(() => 0.5 - Math.random());
       weaknesses.sort(() => 0.5 - Math.random());
 
+      // الألوان
       let ratingColor = "text-emerald-400";
       let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
 
@@ -422,7 +410,14 @@ export default function FantasyHub() {
         ratingBg = "bg-yellow-500/10 border-yellow-500/30";
       }
 
-      setAiReport({ score: finalScore, strengths: strengths.slice(0, 3), weaknesses: weaknesses.slice(0, 2), ratingColor, ratingBg });
+      setAiReport({ 
+        score: finalScore, 
+        strengths: strengths.slice(0, 3), 
+        weaknesses: weaknesses.slice(0, 2),
+        ratingColor, 
+        ratingBg
+      });
+      
       setIsGeneratingAI(false);
     }, 1500);
   };
@@ -431,9 +426,6 @@ export default function FantasyHub() {
     const active = squad.filter(s => !s.isBench && s.player);
     if (active.length < 1) { alert("حط لعيبة الأول عشان أعرف أقصف جبهتك! 😂"); return; }
     
-    setAiReport(null);
-    setRoastReport(null);
-    setActivePlayer(null);
     setIsRoasting(true);
 
     const roasts = [
@@ -455,6 +447,7 @@ export default function FantasyHub() {
       const r1 = roasts[Math.floor(Math.random() * roasts.length)];
       let r2 = roasts[Math.floor(Math.random() * roasts.length)];
       while(r1 === r2) { r2 = roasts[Math.floor(Math.random() * roasts.length)]; }
+
       setRoastReport([r1, r2]);
       setIsRoasting(false);
     }, 1500);
@@ -545,7 +538,7 @@ export default function FantasyHub() {
   }, [fixturesData]);
 
   return (
-    <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 sm:px-6"> 
+    <div className="space-y-12 pb-32 max-w-6xl mx-auto px-4 sm:px-6"> 
       <header className="pt-12 text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-64 w-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
         <h1 className="text-4xl md:text-5xl font-black text-white uppercase italic">Fantasy <span className="text-indigo-500">Hub</span></h1>
@@ -554,28 +547,31 @@ export default function FantasyHub() {
 
       {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
+        
+        {/* 🔄 زرار المزامنة الإجباري في حالة إن الداتا وقفت */}
+        {!isSyncing && leaguePlayers.length === 0 && (
+           <div className="mb-4 flex justify-center">
+             <button onClick={forceManualSync} className="flex items-center gap-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg">
+               <RefreshCw size={14} /> Force Sync Players
+             </button>
+           </div>
+        )}
+
         {isSyncing && (
           <div className="mb-4 flex flex-col items-center gap-2">
             <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2"><Loader2 size={10} className="animate-spin" /> Syncing API Players: {syncedTeams}/{teams.length}</span>
             <div className="w-full max-w-xs h-1 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800"><motion.div className="h-full bg-indigo-500" initial={{ width: 0 }} animate={{ width: `${(syncedTeams / (teams.length || 1)) * 100}%` }} /></div>
           </div>
         )}
-        
-        <div className="relative group flex gap-2">
-          <div className="relative w-full">
-            <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm outline-none focus:border-indigo-500 transition-colors" />
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-          </div>
+        <div className="relative group">
+          <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm outline-none focus:border-indigo-500 transition-colors" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
           
-          <button onClick={forceManualSync} className="h-14 px-4 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-2xl hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center shrink-0" title="Force Sync API">
-            <RefreshCw size={20} className={isSyncing ? "animate-spin" : ""} />
-          </button>
-
           <AnimatePresence>
             {searchResults.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 top-16 left-0 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl max-h-80 overflow-y-auto custom-scrollbar">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 mt-3 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl max-h-80 overflow-y-auto custom-scrollbar">
                 {searchResults.map((p) => (
-                  <div key={p.id} onClick={() => { setActivePlayer(p); setAiReport(null); setRoastReport(null); setSearch(''); setSearchResults([]); }} className="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-0 group">
+                  <div key={p.id} onClick={() => { setActivePlayer(p); setSearch(''); setSearchResults([]); }} className="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-0 group">
                     <img src={p.team?.crest} className="h-6 w-6 object-contain" referrerPolicy="no-referrer" />
                     <span className="flex-1 text-white font-black text-xs uppercase">{p.name} <span className="text-[9px] text-zinc-500 ml-2">{p.position} - £{p.price}m</span></span>
                     <div className="flex gap-2">
@@ -590,112 +586,66 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 🚀 التصميم الجديد: الملعب والتحليل جنب بعض (Side-by-side Layout) */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-0">
-         
-         {/* 🏟️ الجزء اليمين: الملعب التفاعلي (بياخد 8 أعمدة) */}
-         <div className="lg:col-span-8 w-full flex flex-col items-center bg-[#111113]/50 rounded-[2.5rem] p-4 border border-zinc-800/50 shadow-2xl">
-            <SquadBuilder 
-              squad={squad} 
-              onRemovePlayer={removeFromSquad} 
-              totalBudget={totalBudget} 
-              captainId={captainId} 
-              viceCaptainId={viceCaptainId} 
-              setCaptain={setCaptainId} 
-              setViceCaptain={setViceCaptainId} 
-              onGenerateAI={generateAIReport} 
-              isGeneratingAI={isGeneratingAI} 
-              onSelectPlayer={(p) => { setActivePlayer(p); setAiReport(null); setRoastReport(null); }} 
-              onRoastSquad={generateRoastReport} 
-              isRoasting={isRoasting} 
-              onAutoPick={handleAutoPick} 
-              swapSourceIndex={swapSourceIndex}
-              onSlotClick={handleSlotClick} 
-            />
-         </div>
-
-         {/* 🤖 الجزء الشمال: المساعد الذكي (بياخد 4 أعمدة ومثبت عشان ينزل معاك) */}
-         <div className="lg:col-span-4 w-full flex flex-col gap-6 sticky top-24">
-            <AnimatePresence mode="wait">
-               
-               {/* 1. حالة التحميل */}
-               {(isGeneratingAI || isRoasting) ? (
-                 <motion.div key="loading" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="rounded-[2rem] border border-zinc-800 bg-[#111113] p-12 text-center shadow-inner flex flex-col items-center justify-center min-h-[350px]">
-                    <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
-                    <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest animate-pulse">Analyzing Squad Data...</p>
-                 </motion.div>
-               ) 
-               
-               /* 2. حالة تقرير الذكاء الاصطناعي (AI Analysis) */
-               : aiReport ? (
-                 <motion.div key="ai" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-zinc-900 border border-emerald-500/30 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
-                    <button onClick={()=>setAiReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
-                    <div className="flex items-center gap-3 mb-6">
-                      <BrainCircuit className="text-emerald-400" size={28} />
-                      <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">AI Coach</h2>
-                    </div>
-                    <div className={`mb-6 p-6 rounded-2xl ${aiReport.ratingBg} border text-center`}>
-                      <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Squad Score</span>
-                      <div className={`text-5xl font-black ${aiReport.ratingColor} mt-1`}>{aiReport.score}%</div>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-[9px] uppercase font-black text-zinc-500 mb-2 tracking-widest">Strengths</h4>
-                        <ul className="space-y-2">{aiReport.strengths.map((s:string, i:number)=>(<li key={i} className="text-[11px] font-bold text-zinc-300 flex items-start gap-2 leading-tight"><CheckCircle2 size={14} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</li>))}</ul>
-                      </div>
-                      <div>
-                        <h4 className="text-[9px] uppercase font-black text-zinc-500 mb-2 tracking-widest mt-4">Weaknesses</h4>
-                        <ul className="space-y-2">{aiReport.weaknesses.map((s:string, i:number)=>(<li key={i} className="text-[11px] font-bold text-zinc-300 flex items-start gap-2 leading-tight"><AlertTriangle size={14} className="text-red-500 mt-0.5 shrink-0"/> {s}</li>))}</ul>
-                      </div>
-                    </div>
-                 </motion.div>
-               )
-
-               /* 3. حالة قصف الجبهة (Roast Report) */
-               : roastReport ? (
-                 <motion.div key="roast" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-red-950/20 border border-red-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(220,38,38,0.1)] relative">
-                    <button onClick={()=>setRoastReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
-                    <div className="flex items-center gap-3 mb-6">
-                      <Flame className="text-red-500" size={28} />
-                      <h2 className="text-lg font-black text-red-500 uppercase italic tracking-tighter">Squad Roast</h2>
-                    </div>
-                    <div className="space-y-4">
-                      {roastReport.map((r,i)=>(<p key={i} className="text-red-200 font-bold text-sm leading-relaxed" dir="rtl">{r}</p>))}
-                    </div>
-                 </motion.div>
-               )
-
-               /* 4. حالة معلومات اللاعب (Active Player) */
-               : activePlayer ? (
-                 <motion.div key="player" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="rounded-[2rem] border border-indigo-500/30 bg-[#111113] p-8 shadow-2xl relative">
-                    <button onClick={() => setActivePlayer(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
-                    <img src={activePlayer.team?.crest} className="h-16 w-16 object-contain mb-4" referrerPolicy="no-referrer" />
-                    <h3 className="text-2xl font-black text-white uppercase italic truncate">{activePlayer.name}</h3>
-                    <p className="text-[10px] text-indigo-400 font-bold tracking-widest mt-1 uppercase">{activePlayer.position} - £{activePlayer.price}m</p>
-                    <div className="grid grid-cols-2 gap-3 mt-6">
-                      <div className="bg-zinc-900 p-4 rounded-xl text-center"><p className="text-[9px] text-zinc-500 uppercase font-black mb-1">Goals</p><p className="text-2xl font-black text-white">{activePlayer.goals || 0}</p></div>
-                      <div className="bg-zinc-900 p-4 rounded-xl text-center"><p className="text-[9px] text-zinc-500 uppercase font-black mb-1">Assists</p><p className="text-2xl font-black text-white">{activePlayer.assists || 0}</p></div>
-                    </div>
-                    <div className="flex flex-col gap-2 mt-6">
-                       <button onClick={() => addToSquad(activePlayer)} className="w-full bg-emerald-600 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"><Plus size={14}/> Add to Squad</button>
-                       <button onClick={() => addToComparison(activePlayer)} className="w-full bg-zinc-800 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"><Scale size={14}/> Compare</button>
-                    </div>
-                 </motion.div>
-               )
-
-               /* 5. الحالة الافتراضية (Awaiting Input) */
-               : (
-                 <motion.div key="empty" className="rounded-[2rem] border border-dashed border-zinc-800 bg-[#111113]/50 p-12 text-center shadow-inner flex flex-col items-center justify-center min-h-[350px]">
-                    <Ghost className="text-zinc-800 mb-4" size={40} />
-                    <h2 className="text-sm font-black text-zinc-700 uppercase italic tracking-widest">Awaiting Input</h2>
-                    <p className="text-[9px] text-zinc-500 uppercase mt-2 tracking-widest font-black leading-relaxed">Search a player or generate<br/>AI report to view details here.</p>
-                 </motion.div>
-               )}
-            </AnimatePresence>
-         </div>
+      {/* المقارنة والبيانات */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="lg:col-span-4">
+          <AnimatePresence mode="wait">
+            {activePlayer ? (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="rounded-3xl border border-indigo-500/30 bg-[#111113] p-6 shadow-2xl relative overflow-hidden">
+                 <div className="flex justify-between mb-6">
+                   <img src={activePlayer.team?.crest} className="h-14 w-14 object-contain" referrerPolicy="no-referrer" />
+                   <button onClick={() => setActivePlayer(null)} className="text-zinc-500 hover:text-white"><X size={18} /></button>
+                 </div>
+                 <h3 className="text-xl font-black text-white uppercase italic truncate">{activePlayer.name}</h3>
+                 <p className="text-[10px] text-zinc-500 font-bold tracking-widest mt-1 uppercase">{activePlayer.league === 'PL' ? 'Premier League' : 'Global'}</p>
+                 <div className="grid grid-cols-2 gap-3 mt-6">
+                   <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Goals</p><p className="text-xl font-black text-white">{activePlayer.goals || 0}</p></div>
+                   <div className="bg-zinc-900 p-3 rounded-xl"><p className="text-[9px] text-zinc-500 uppercase font-black">Assists</p><p className="text-xl font-black text-white">{activePlayer.assists || 0}</p></div>
+                 </div>
+                 <div className="flex gap-2 mt-6">
+                    <button onClick={() => addToComparison(activePlayer)} className="flex-1 bg-indigo-600 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"><Scale size={14}/> Compare</button>
+                    <button onClick={() => addToSquad(activePlayer)} className="flex-1 bg-emerald-600 h-12 rounded-xl text-white font-black uppercase text-[10px] hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"><Plus size={14}/> Add</button>
+                 </div>
+              </motion.div>
+            ) : (
+              <motion.div className="rounded-3xl border border-dashed border-zinc-800 p-20 text-center bg-[#09090b]/50">
+                 <Ghost className="mx-auto text-zinc-800" size={30} />
+                 <p className="mt-4 text-[10px] text-zinc-600 uppercase font-black tracking-widest">Awaiting Input</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="lg:col-span-8">
+           <div className="rounded-[2rem] border border-zinc-800 bg-[#111113] p-8 md:p-12 text-center shadow-inner h-full flex flex-col items-center justify-center min-h-[300px]">
+             <TrendingUp className="mx-auto text-zinc-800 mb-4" size={40} />
+             <h2 className="text-lg font-black text-zinc-700 uppercase italic tracking-widest">Comparison Labs</h2>
+             <p className="text-[10px] text-zinc-800 uppercase mt-2 tracking-widest font-black">Select up to 2 players from search to compare stats</p>
+           </div>
+        </div>
       </section>
 
-      {/* باقي الأقسام زي التوقعات والماتشات وشريط المقارنة زي ما هي */}
+      {/* الملعب التفاعلي */}
+      <section className="flex flex-col items-center relative z-0">
+         <SquadBuilder 
+           squad={squad} 
+           onRemovePlayer={removeFromSquad} 
+           totalBudget={totalBudget} 
+           captainId={captainId} 
+           viceCaptainId={viceCaptainId} 
+           setCaptain={setCaptainId} 
+           setViceCaptain={setViceCaptainId} 
+           onGenerateAI={generateAIReport} 
+           isGeneratingAI={isGeneratingAI} 
+           onSelectPlayer={setActivePlayer} 
+           onRoastSquad={generateRoastReport} 
+           isRoasting={isRoasting} 
+           onAutoPick={handleAutoPick} 
+           swapSourceIndex={swapSourceIndex}
+           onSlotClick={handleSlotClick} 
+         />
+      </section>
+
+      {/* التوقعات */}
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl mt-8">
           <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
           <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Weekly Predictor</h2>
@@ -710,6 +660,7 @@ export default function FantasyHub() {
           )}
       </section>
 
+      {/* الماتشات والنتائج */}
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
          <h2 className="text-xl md:text-2xl font-black text-white uppercase italic mb-10 flex items-center gap-3 relative z-10"><CalendarDays className="text-indigo-400" /> Upcoming Fixtures</h2>
@@ -753,6 +704,7 @@ export default function FantasyHub() {
          )}
       </section>
 
+      {/* المواهب */}
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
@@ -760,7 +712,7 @@ export default function FantasyHub() {
             {globalProspects.map(p => (
               <div key={p.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer group hover:-translate-y-1 shadow-lg">
                  <div className="flex items-center gap-2 mb-4"><img src={p.team?.crest} className="h-4 w-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity" /><span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest">{p.team?.shortName}</span></div>
-                 <p onClick={()=>{setActivePlayer(p); setAiReport(null); setRoastReport(null);}} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
+                 <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
                  <div className="flex justify-between items-center mt-5">
                     <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
                     <div className="flex gap-1">
@@ -773,6 +725,7 @@ export default function FantasyHub() {
          </div>
       </section>
 
+      {/* شريط المقارنة */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-2xl px-4 py-3 md:px-6 md:py-4 rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
@@ -802,6 +755,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* نافذة المقارنة */}
       <AnimatePresence>
         {isComparisonOpen && selectedPlayers.length === 2 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -841,6 +795,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* النوافذ التانية (الذكاء الاصطناعي والتوقع) */}
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
@@ -860,6 +815,39 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {aiReport && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
+              <BrainCircuit className="mx-auto text-indigo-400 mb-4" size={40} />
+              <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">AI Squad Analysis</h2>
+              <div className={`my-8 p-8 rounded-[2rem] ${aiReport.ratingBg} border`}>
+                <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Squad Score</span>
+                <div className={`text-6xl font-black ${aiReport.ratingColor} mt-2`}>{aiReport.score}%</div>
+              </div>
+              <ul className="text-left space-y-3 mb-10">
+                {aiReport.strengths.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</li>))}
+                {aiReport.weaknesses.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0"/> {s}</li>))}
+              </ul>
+              <button onClick={()=>setAiReport(null)} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl">Back to Field</button>
+            </motion.div>
+          </div>
+        )}
+        
+        {/* نافذة الروست (قصف الجبهة) */}
+        {roastReport && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95">
+            <motion.div initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-red-950/20 border border-red-500/30 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+              <Flame className="mx-auto text-red-500 mb-6" size={50} />
+              <h2 className="text-2xl font-black text-red-500 uppercase italic mb-8 tracking-tighter">AI Squad Roast 🤡</h2>
+              <div className="space-y-4">
+                {roastReport.map((r,i)=>(<p key={i} className="text-red-100 font-black text-lg leading-relaxed italic" dir="rtl">{r}</p>))}
+              </div>
+              <button onClick={()=>setRoastReport(null)} className="mt-10 w-full py-4 bg-red-600 text-white font-black rounded-2xl uppercase text-xs hover:bg-red-500 transition-all shadow-xl shadow-red-600/20">كفاية إهانة ورجعني 😂</button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
