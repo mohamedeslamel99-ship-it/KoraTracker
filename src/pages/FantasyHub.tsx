@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 
-// 🚨 خوارزمية ذكية لتصنيف مراكز اللاعبين بدقة 🚨
+// 🚨 خوارزمية تصنيف المراكز
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
   const pos = String(p.position || p.section || '').toLowerCase();
@@ -94,7 +94,9 @@ export default function FantasyHub() {
   const { data: saScorers } = useSWR(endpoints.getTopScorers('SA'), fetchFootballData, { revalidateOnFocus: false });
   const { data: blScorers } = useSWR(endpoints.getTopScorers('BL1'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fl1Scorers } = useSWR(endpoints.getTopScorers('FL1'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches?status=SCHEDULED', fetchFootballData, { revalidateOnFocus: false });
+  
+  // 🔴 التعديل هنا: سحب كل ماتشات الموسم بدل الماتشات القادمة بس
+  const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } });
   const [syncedTeams, setSyncedTeams] = useState<number>(() => { try { const saved = localStorage.getItem('kt_sync_progress'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } });
@@ -190,7 +192,6 @@ export default function FantasyHub() {
     navigator.clipboard.writeText(text); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  // ⚽ إصلاح دالة إضافة اللاعب عشان React يحس بيها فوراً
   const addToSquad = (player: any) => {
     if (player.league && player.league !== 'PL') { alert(`❌ مسموح بوضع لاعبي الدوري الإنجليزي فقط.`); return; }
     if (squad.some(s => s.player?.id === player.id)) { alert("اللاعب موجود بالفعل في تشكيلتك!"); return; }
@@ -202,7 +203,6 @@ export default function FantasyHub() {
 
     if (emptySlotIndex !== -1) {
       const newSquad = [...squad];
-      // التعديل هنا: بنحدث المربع كله كعنصر جديد عشان الـ UI يتحدث
       newSquad[emptySlotIndex] = { ...newSquad[emptySlotIndex], player: player };
       setSquad(newSquad);
       if (!captainId) setCaptainId(player.id);
@@ -211,7 +211,6 @@ export default function FantasyHub() {
     }
   };
 
-  // ⚽ إصلاح دالة مسح اللاعب
   const removeFromSquad = (index: number, playerId: number) => {
     const newSquad = [...squad];
     newSquad[index] = { ...newSquad[index], player: null };
@@ -332,10 +331,34 @@ export default function FantasyHub() {
     if (f[0]) setCaptainId(f[0].id);
   };
 
+  // 🔴 التعديل هنا: خوارزمية استخراج الجولة الحالية وإظهار الماتشات الملعوبة
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
-    const grouped = fixturesData.matches.reduce((acc: any, m: any) => { if (!acc[m.matchday]) acc[m.matchday] = []; acc[m.matchday].push(m); return acc; }, {});
-    return Object.keys(grouped).map(Number).sort((a,b)=>a-b).slice(0,3).map(gw => ({ gw, matches: grouped[gw] }));
+    
+    const grouped = fixturesData.matches.reduce((acc: any, m: any) => { 
+      if (!m.matchday) return acc;
+      if (!acc[m.matchday]) acc[m.matchday] = []; 
+      acc[m.matchday].push(m); 
+      return acc; 
+    }, {});
+
+    // البحث عن الجولة الحالية (أول جولة فيها ماتش لسه متلعبش أو شغال دلوقتي)
+    let currentMatchday = 1;
+    const matchdays = Object.keys(grouped).map(Number).sort((a,b)=>a-b);
+    for (const md of matchdays) {
+      const matches = grouped[md];
+      const hasPendingOrLive = matches.some((m:any) => ['SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED'].includes(m.status));
+      if (hasPendingOrLive) {
+        currentMatchday = md;
+        break;
+      }
+    }
+
+    // إرجاع الجولة الحالية والجولتين اللي بعدها
+    return matchdays
+      .filter(md => md >= currentMatchday)
+      .slice(0, 3)
+      .map(gw => ({ gw, matches: grouped[gw] }));
   }, [fixturesData]);
 
   return (
@@ -450,7 +473,7 @@ export default function FantasyHub() {
           )}
       </section>
 
-      {/* الماتشات */}
+      {/* الماتشات والنتائج */}
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
          <h2 className="text-xl md:text-2xl font-black text-white uppercase italic mb-10 flex items-center gap-3 relative z-10"><CalendarDays className="text-indigo-400" /> Upcoming Fixtures</h2>
@@ -462,13 +485,32 @@ export default function FantasyHub() {
                  <div key={gw.gw} className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-6 flex flex-col hover:border-indigo-500/30 transition-colors">
                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-6 flex justify-between items-center"><span>Gameweek {gw.gw}</span> <div className="h-1 w-1 bg-indigo-500 rounded-full animate-pulse" /></p>
                    <div className="space-y-3 relative max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                     {gw.matches.map((m:any) => (
-                       <div key={m.id} className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition-all cursor-default">
-                           <span className="text-[10px] font-black text-white uppercase w-12 text-left truncate" title={m.homeTeam.name}>{m.homeTeam.tla || m.homeTeam.shortName?.substring(0,3)}</span>
-                           <span className="text-[8px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 shrink-0 mx-2">VS</span>
-                           <span className="text-[10px] font-black text-white uppercase w-12 text-right truncate" title={m.awayTeam.name}>{m.awayTeam.tla || m.awayTeam.shortName?.substring(0,3)}</span>
-                       </div>
-                     ))}
+                     {gw.matches.map((m:any) => {
+                       // 🔴 التعديل هنا: إظهار النتيجة للماتشات الملعوبة واللايف
+                       const isFinished = m.status === 'FINISHED';
+                       const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+                       const homeScore = m.score?.fullTime?.home ?? '-';
+                       const awayScore = m.score?.fullTime?.away ?? '-';
+
+                       return (
+                         <div key={m.id} className="flex justify-between items-center bg-[#09090b] p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 transition-all cursor-default">
+                             <span className="text-[10px] font-black text-white uppercase w-12 text-left truncate" title={m.homeTeam.name}>{m.homeTeam.tla || m.homeTeam.shortName?.substring(0,3)}</span>
+                             
+                             {isFinished || isLive ? (
+                               <div className="flex flex-col items-center justify-center mx-2 shrink-0">
+                                  {isLive && <span className="text-[7px] text-red-500 font-black animate-pulse mb-0.5">LIVE</span>}
+                                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded border", isLive ? "bg-red-500/10 text-red-400 border-red-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30")}>
+                                    {homeScore} - {awayScore}
+                                  </span>
+                               </div>
+                             ) : (
+                               <span className="text-[8px] font-black text-zinc-600 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 shrink-0 mx-2">VS</span>
+                             )}
+
+                             <span className="text-[10px] font-black text-white uppercase w-12 text-right truncate" title={m.awayTeam.name}>{m.awayTeam.tla || m.awayTeam.shortName?.substring(0,3)}</span>
+                         </div>
+                       );
+                     })}
                    </div>
                  </div>
                ))}
