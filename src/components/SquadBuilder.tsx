@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { toPng } from 'html-to-image';
-// 👇 ضفنا أيقونة Wand2 (العصا السحرية) 👇
 import { X, Shirt, Crown, Sparkles, Loader2, Flame, Wand2 } from 'lucide-react';
 
 export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, captainId, viceCaptainId, setCaptain, setViceCaptain, onGenerateAI, isGeneratingAI, onSelectPlayer, onRoastSquad, isRoasting, onAutoPick }: any) {
@@ -20,7 +19,8 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
   };
 
   const PlayerSlot = ({ player, index, isBench = false }: any) => (
-    <div className="flex flex-col items-center w-16 relative group mt-2">
+    // 👇 كبرنا العرض الكلي لمساحة اللاعب عشان الاسم ياخد راحته 👇
+    <div className="flex flex-col items-center w-[72px] md:w-20 relative group mt-2">
       {player && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-30 bg-black/80 p-1 rounded-full border border-white/10 shadow-2xl">
           <button onClick={(e) => { e.stopPropagation(); setCaptain(player.id); }} className="w-5 h-5 bg-yellow-500 rounded-full text-black font-black text-[10px] flex items-center justify-center hover:scale-110" title="Captain">C</button>
@@ -50,10 +50,15 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
         )}
       </div>
 
-      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded min-w-[55px] max-w-[70px] text-center truncate shadow-md mt-1
-        ${player ? 'bg-[#37003c] text-white border border-[#00ff87]' : 'bg-black/20 text-white/50'}`}>
+      {/* 👇 هنا التعديل السحري: لغينا الـ truncate وخليناه ياخد سطرين (line-clamp-2) وظبطنا المسافات 👇 */}
+      <span 
+        className={`text-[8.5px] md:text-[9.5px] font-black px-1 md:px-1.5 py-0.5 rounded w-[68px] md:w-[76px] text-center leading-[1.2] line-clamp-2 break-words shadow-md mt-1
+        ${player ? 'bg-[#37003c] text-white border border-[#00ff87]' : 'bg-black/20 text-white/50'}`}
+        title={player ? player.name : ''}
+      >
         {player ? player.name : 'فارغ'}
       </span>
+      
       {player && <span className="text-[8px] font-bold text-green-300 mt-0.5 bg-black/40 px-1 rounded">£{player.price}m</span>}
     </div>
   );
@@ -89,7 +94,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
         <div className="absolute top-1/2 left-1/2 w-32 h-32 border-2 border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2 z-10"></div>
       </div>
 
-      {/* 👇 الزراير متنسقة في شبكة (Grid) شكلها تحفة 👇 */}
       <div className="flex flex-col gap-3 w-full max-w-[400px]">
          <div className="flex gap-3 w-full">
            <button onClick={onGenerateAI} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
@@ -100,7 +104,6 @@ export default function SquadBuilder({ squad, onRemovePlayer, totalBudget, capta
            </button>
          </div>
          <div className="flex gap-3 w-full">
-           {/* زرار Auto Pick */}
            <button onClick={onAutoPick} className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest flex items-center justify-center gap-2">
              <Wand2 size={14} /> Auto Pick
            </button>
