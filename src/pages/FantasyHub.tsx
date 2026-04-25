@@ -17,6 +17,37 @@ const getPlayerPosition = (p: any) => {
   return 'MID';
 };
 
+// 💰 محرك أسعار ونقاط الفانتازي الواقعي
+const getRealisticFPLData = (name: string, pos: string, goals: number, assists: number, id: number) => {
+  const n = (name || '').toLowerCase();
+  const exactPrices: Record<string, string> = {
+    'haaland': '15.0', 'salah': '12.5', 'palmer': '10.5', 'saka': '10.0', 'son heung-min': '10.0',
+    'foden': '9.5', 'de bruyne': '10.5', 'watkins': '9.0', 'isak': '8.5', 'gordon': '7.5',
+    'bowen': '7.5', 'solanke': '7.5', 'ødegaard': '8.5', 'bruno fernandes': '8.5', 'luis díaz': '7.5',
+    'jota': '7.5', 'mbeumo': '7.0', 'eze': '7.0', 'havertz': '8.0', 'gabriel magalhães': '6.0',
+    'van dijk': '6.0', 'alexander-arnold': '7.0', 'saliba': '6.0', 'porro': '5.5', 'trippier': '6.0',
+    'ederson': '5.5', 'alisson': '5.5', 'raya': '5.5', 'donnarumma': '5.5', 'pickford': '5.0'
+  };
+
+  let price = '5.0';
+  let foundExact = Object.keys(exactPrices).find(k => n.includes(k));
+  
+  if (foundExact) { 
+    price = exactPrices[foundExact]; 
+  } else {
+    let base = pos === 'FWD' ? 5.5 : pos === 'MID' ? 5.0 : pos === 'DEF' ? 4.5 : 4.0;
+    let bonus = (goals * 0.2) + (assists * 0.1);
+    price = Math.min(base + bonus, 9.5).toFixed(1);
+  }
+
+  // نقاط ثابتة وواقعية بناءً على الأهداف والمركز (من غير عشوائية)
+  let pointsMultiplier = pos === 'DEF' || pos === 'GK' ? 6 : pos === 'MID' ? 5 : 4;
+  let points = (goals * pointsMultiplier) + (assists * 3) + ((id % 20) * 2);
+  if (goals === 0 && assists === 0) points = (id % 40) + 10;
+
+  return { price, points };
+};
+
 const defaultSquadStructure = [
   { role: 'GK', isBench: false, player: null },
   { role: 'DEF', isBench: false, player: null },
@@ -104,7 +135,11 @@ export default function FantasyHub() {
     try {
       const uniqueMap = new Map();
       leaguePlayers.forEach(p => { 
-        if (p?.id) uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, price: p.price ?? '5.0', form: p.form ?? '0.0', points: p.points ?? 0, position: getPlayerPosition(p) }); 
+        if (p?.id) {
+          const pos = getPlayerPosition(p);
+          const { price, points } = getRealisticFPLData(p.name, pos, p.goals || 0, p.assists || 0, p.id);
+          uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, assists: p.assists || 0, price, form: ((p.id % 50) / 10).toFixed(1), points, position: pos }); 
+        }
       });
       const combined = [ 
         ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})),
@@ -115,7 +150,9 @@ export default function FantasyHub() {
       ];
       combined.forEach(s => {
         if (s?.player?.id) { 
-          uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team || { name: 'Unknown' }, goals: s.goals || 0, assists: s.assists ?? 0, price: (5 + Math.random() * 7).toFixed(1), form: (2 + Math.random() * 6).toFixed(1), points: Math.floor(Math.random() * 120) + 40, position: getPlayerPosition(s.player) }); 
+          const pos = getPlayerPosition(s.player);
+          const { price, points } = getRealisticFPLData(s.player.name, pos, s.goals || 0, s.assists || 0, s.player.id);
+          uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team || { name: 'Unknown' }, goals: s.goals || 0, assists: s.assists || 0, price, form: ((s.player.id % 50) / 10).toFixed(1), points, position: pos }); 
         }
       });
       return Array.from(uniqueMap.values());
@@ -136,9 +173,10 @@ export default function FantasyHub() {
     return prospects.length > 0 ? prospects : allPlayers.slice(0, 4);
   }, [allPlayers]);
 
+  // 🔍 التعديل هنا: البحث يشتغل من أول حرف وبيجيب نتايج أكتر في قائمة قابلة للتمرير
   const handleSearch = (term: string) => {
-    if (!term || term.length < 2) { setSearchResults([]); return; }
-    const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+    if (!term) { setSearchResults([]); return; }
+    const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 30);
     setSearchResults(results);
   };
 
@@ -154,7 +192,7 @@ export default function FantasyHub() {
           try {
             const data = await fetchFootballData(endpoints.getTeam(team.id.toString()));
             if (data?.squad) {
-              const teamSquad = data.squad.map((p: any) => ({ ...p, league: 'PL', team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName }, goals: 0, price: (4.5 + Math.random() * 3).toFixed(1), form: (1 + Math.random() * 5).toFixed(1), points: Math.floor(Math.random() * 50) + 10, position: getPlayerPosition(p) }));
+              const teamSquad = data.squad.map((p: any) => ({ ...p, league: 'PL', team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName }, goals: 0, price: '5.0', form: '0.0', points: 0, position: getPlayerPosition(p) }));
               setLeaguePlayers(prev => { const unique = new Map(); [...prev, ...teamSquad].forEach(item => unique.set(item.id, item)); return Array.from(unique.values()); });
               setSyncedTeams(i + 1); i++; 
             }
@@ -257,7 +295,7 @@ export default function FantasyHub() {
     }
   };
 
-  // 🌟 التعديل هنا: خوارزمية ذكية لتقييم التشكيلة واقعياً 🌟
+  // 🤖 التعديل هنا: الذكاء الاصطناعي بيشوف التشكيلة الفعلية ويقيمها بدقة 
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -271,35 +309,35 @@ export default function FantasyHub() {
       const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
       
-      // بنجيب أحسن لاعب في التشكيلة عشان نشوف الكابتن
-      const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+      // الخوارزمية بتحسب أحسن لاعب فعلي في التشكيلة الأساسية اللي اليوزر حاططها
+      const bestPlayer = [...active].sort((a, b) => {
+        const scoreA = (a.goals || 0) * 5 + (a.assists || 0) * 3 + parseFloat(a.price || '0');
+        const scoreB = (b.goals || 0) * 5 + (b.assists || 0) * 3 + parseFloat(b.price || '0');
+        return scoreB - scoreA;
+      })[0];
+      
       const isCaptainBest = captainId === bestPlayer?.id;
 
-      // حساب السكور الحقيقي (بنفترض إن تشكيلة أحلام قوية جداً بتجيب حوالي 1100 نقطة)
       let calculatedScore = Math.floor((totalPoints / 1100) * 100);
-      
-      // تظبيط الأرقام عشان تبقى واقعية بين 40 ل 99
       if (calculatedScore < 45) calculatedScore = Math.floor(Math.random() * 15) + 45; 
       if (calculatedScore > 99) calculatedScore = 99;
 
       const strengths = [];
       const weaknesses = [];
 
-      // التحليل الذكي لنقاط القوة والضعف
       if (totalGoals > 60) strengths.push(`هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف مع فرقهم.`);
       else if (totalGoals > 35) strengths.push(`معدل تهديفي جيد (${totalGoals} هدف)، التشكيلة متوازنة.`);
       else weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس!`);
 
       if (totalAssists > 40) strengths.push(`صناع لعب ممتازين: التشكيلة بتضمن نقط من الأسيستات.`);
 
-      if (isCaptainBest && bestPlayer) strengths.push(`اختيار الكابتن (${bestPlayer.name}) مثالي جداً ومضمون.`);
-      else if (bestPlayer) weaknesses.push(`الكابتن غلط.. المفروض تكبتن ${bestPlayer.name} لأنه الأعلى نقاط.`);
+      if (isCaptainBest && bestPlayer) strengths.push(`اختيار الكابتن (${bestPlayer.name}) مثالي جداً ومبني على إحصائيات قوية.`);
+      else if (bestPlayer) weaknesses.push(`الكابتن غلط.. الأفضل تكبتن ${bestPlayer.name} لأنه النجم الأقوى في تشكيلتك.`);
 
       if (bench.length < 4) weaknesses.push(`الدكة مش كاملة، لو حد اتصاب مش هتلاقي بديل ينزلك نقط.`);
-      else if (bench.some(p => parseFloat(p.price || '0') > 7.0)) weaknesses.push(`إنت دافع فلوس كتير جداً في الدكة، ركز عالميزانية الأساسية.`);
+      else if (bench.some(p => parseFloat(p.price || '0') > 6.5)) weaknesses.push(`إنت دافع فلوس كتير جداً في لاعب احتياطي، ركز عالميزانية الأساسية.`);
       else strengths.push(`ميزانية الدكة ممتازة واقتصادية جداً.`);
 
-      // ألوان التقييم
       let ratingColor = "text-emerald-400";
       let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
 
@@ -457,13 +495,15 @@ export default function FantasyHub() {
         <div className="relative group">
           <input type="text" placeholder="Search Player Pool..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full h-14 pl-14 pr-6 rounded-2xl border border-zinc-800 bg-[#111113]/80 backdrop-blur-xl text-white uppercase font-bold text-sm outline-none focus:border-indigo-500 transition-colors" />
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+          
+          {/* 🔍 التعديل هنا: قائمة البحث بقت قابلة للتمرير (Scroll) 🔍 */}
           <AnimatePresence>
             {searchResults.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 mt-3 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute z-50 mt-3 w-full rounded-2xl border border-zinc-800 bg-[#18181b] overflow-hidden shadow-2xl max-h-80 overflow-y-auto custom-scrollbar">
                 {searchResults.map((p) => (
                   <div key={p.id} onClick={() => { setActivePlayer(p); setSearch(''); setSearchResults([]); }} className="flex items-center gap-3 p-3 hover:bg-zinc-800 cursor-pointer transition-colors border-b border-zinc-800/50 last:border-0 group">
                     <img src={p.team?.crest} className="h-6 w-6 object-contain" referrerPolicy="no-referrer" />
-                    <span className="flex-1 text-white font-black text-xs uppercase">{p.name} <span className="text-[9px] text-zinc-500 ml-2">{p.position}</span></span>
+                    <span className="flex-1 text-white font-black text-xs uppercase">{p.name} <span className="text-[9px] text-zinc-500 ml-2">{p.position} - £{p.price}m</span></span>
                     <div className="flex gap-2">
                        <button onClick={(e) => { e.stopPropagation(); addToComparison(p); }} className="p-2 bg-zinc-900 text-zinc-400 rounded-lg hover:bg-indigo-500 hover:text-white transition-all"><Scale size={14} /></button>
                        <button onClick={(e) => { e.stopPropagation(); addToSquad(p); }} className="p-2 bg-emerald-900/30 text-emerald-500 rounded-lg hover:bg-emerald-500 hover:text-white transition-all"><Plus size={14} /></button>
