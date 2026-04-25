@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp } from 'lucide-react';
+import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
@@ -117,17 +117,27 @@ export default function FantasyHub() {
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
 
-  // 🔴 الدوري الإنجليزي فقط 🔴
+  // APIs
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
-  const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } });
-  const [syncedTeams, setSyncedTeams] = useState<number>(() => { try { const saved = localStorage.getItem('kt_sync_progress'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } });
+  const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { 
+    try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } 
+  });
+  const [syncedTeams, setSyncedTeams] = useState<number>(() => { 
+    try { const saved = localStorage.getItem('kt_sync_progress'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } 
+  });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // 🔴 تجميع لاعبي الدوري الإنجليزي فقط 🔴
+  // 💾 التعديل 1: حفظ اللعيبة في الذاكرة فوراً أول ما ييجوا عشان ميضيعوش
+  useEffect(() => {
+    if (leaguePlayers.length > 0) {
+      localStorage.setItem('kt_players_db', JSON.stringify(leaguePlayers));
+    }
+  }, [leaguePlayers]);
+
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
@@ -140,9 +150,7 @@ export default function FantasyHub() {
         }
       });
 
-      const combined = [ 
-        ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'}))
-      ];
+      const combined = [ ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})) ];
       
       combined.forEach(s => {
         if (s?.player?.id) { 
@@ -170,7 +178,6 @@ export default function FantasyHub() {
     return prospects.length > 0 ? prospects : allPlayers.slice(0, 4);
   }, [allPlayers]);
 
-  // 🔍 البحث يشتغل من أول حرف
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
     const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 30);
@@ -182,7 +189,7 @@ export default function FantasyHub() {
     if (teams.length > 0 && !isSyncing && (leaguePlayers.length === 0 || !isRecentlySynced)) {
       const syncLeague = async () => {
         setIsSyncing(true);
-        if (syncedTeams === 0) await new Promise(r => setTimeout(r, 5000));
+        if (syncedTeams === 0) await new Promise(r => setTimeout(r, 2000));
         let i = syncedTeams;
         while (i < teams.length) {
           const team = teams[i];
@@ -192,9 +199,13 @@ export default function FantasyHub() {
               const teamSquad = data.squad.map((p: any) => ({ ...p, league: 'PL', team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName }, goals: 0, price: '5.0', form: '0.0', points: 0, position: getPlayerPosition(p) }));
               setLeaguePlayers(prev => { const unique = new Map(); [...prev, ...teamSquad].forEach(item => unique.set(item.id, item)); return Array.from(unique.values()); });
               setSyncedTeams(i + 1); i++; 
+              localStorage.setItem('kt_sync_progress', (i).toString());
             }
-            await new Promise(r => setTimeout(r, 6000));
-          } catch (err: any) { i++; await new Promise(r => setTimeout(r, 2000)); }
+            await new Promise(r => setTimeout(r, 5000));
+          } catch (err: any) { 
+            i++; 
+            await new Promise(r => setTimeout(r, 2000)); 
+          }
         }
         setIsSyncing(false);
         localStorage.setItem('kt_last_sync', Date.now().toString());
@@ -207,6 +218,17 @@ export default function FantasyHub() {
     const timer = setTimeout(() => { handleSearch(search); }, 300);
     return () => clearTimeout(timer);
   }, [search, allPlayers]);
+
+  // 🔄 التعديل 2: دالة مزامنة إجبارية عشان لو الداتا علقت معاك
+  const forceManualSync = () => {
+    localStorage.removeItem('kt_last_sync');
+    localStorage.removeItem('kt_sync_progress');
+    setSyncedTeams(0);
+    setIsSyncing(false);
+    setLeaguePlayers([]);
+    // Reload SWR data trick
+    window.location.reload();
+  };
 
   const addToComparison = (player: any) => { 
     if (selectedPlayers.find(p => p.id === player.id)) return; 
@@ -481,6 +503,16 @@ export default function FantasyHub() {
 
       {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
+        
+        {/* 🔄 زرار المزامنة الإجباري في حالة إن الداتا وقفت */}
+        {!isSyncing && leaguePlayers.length === 0 && (
+           <div className="mb-4 flex justify-center">
+             <button onClick={forceManualSync} className="flex items-center gap-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg">
+               <RefreshCw size={14} /> Force Sync Players
+             </button>
+           </div>
+        )}
+
         {isSyncing && (
           <div className="mb-4 flex flex-col items-center gap-2">
             <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2"><Loader2 size={10} className="animate-spin" /> Syncing API Players: {syncedTeams}/{teams.length}</span>
