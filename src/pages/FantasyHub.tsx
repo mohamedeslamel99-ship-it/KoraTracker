@@ -6,14 +6,14 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 
-// 🚨 خوارزمية تصنيف المراكز
+// 🚨 خوارزمية ذكية لتصنيف مراكز اللاعبين بدقة 🚨
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
   const pos = String(p.position || p.section || '').toLowerCase();
-  if (pos.includes('goal') || pos === 'gk') return 'GK';
-  if (pos.includes('defen') || pos.includes('back') || pos === 'df' || pos.includes('cb') || pos.includes('lb') || pos.includes('rb')) return 'DEF';
-  if (pos.includes('midfield') || pos.includes('wing') || pos === 'mf' || pos.includes('cm') || pos.includes('dm') || pos.includes('am')) return 'MID';
-  if (pos.includes('forward') || pos.includes('offen') || pos.includes('attack') || pos.includes('strik') || pos === 'fw' || pos.includes('st')) return 'FWD';
+  if (pos === 'gk' || pos.includes('goal')) return 'GK';
+  if (pos === 'def' || pos === 'df' || pos.includes('defen') || pos.includes('back') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb')) return 'DEF';
+  if (pos === 'mid' || pos === 'mf' || pos.includes('midfield') || pos.includes('wing') || pos.includes('cm') || pos.includes('dm') || pos.includes('am')) return 'MID';
+  if (pos === 'fwd' || pos === 'fw' || pos.includes('forward') || pos.includes('offen') || pos.includes('attack') || pos.includes('strik') || pos.includes('st')) return 'FWD';
   return 'MID';
 };
 
@@ -190,18 +190,20 @@ export default function FantasyHub() {
     navigator.clipboard.writeText(text); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000);
   };
 
+  // ⚽ إصلاح دالة إضافة اللاعب عشان React يحس بيها فوراً
   const addToSquad = (player: any) => {
     if (player.league && player.league !== 'PL') { alert(`❌ مسموح بوضع لاعبي الدوري الإنجليزي فقط.`); return; }
     if (squad.some(s => s.player?.id === player.id)) { alert("اللاعب موجود بالفعل في تشكيلتك!"); return; }
     const teamCount = squad.filter(s => s.player?.team?.id === player.team?.id).length;
     if (teamCount >= 3) { alert("عذراً، أقصى حد 3 لاعبين من نفس الفريق!"); return; }
 
-    const pos = getPlayerPosition(player);
+    const pos = player.position; 
     const emptySlotIndex = squad.findIndex(s => s.player === null && s.role === pos);
 
     if (emptySlotIndex !== -1) {
       const newSquad = [...squad];
-      newSquad[emptySlotIndex].player = player;
+      // التعديل هنا: بنحدث المربع كله كعنصر جديد عشان الـ UI يتحدث
+      newSquad[emptySlotIndex] = { ...newSquad[emptySlotIndex], player: player };
       setSquad(newSquad);
       if (!captainId) setCaptainId(player.id);
     } else {
@@ -209,9 +211,10 @@ export default function FantasyHub() {
     }
   };
 
+  // ⚽ إصلاح دالة مسح اللاعب
   const removeFromSquad = (index: number, playerId: number) => {
     const newSquad = [...squad];
-    newSquad[index].player = null;
+    newSquad[index] = { ...newSquad[index], player: null };
     setSquad(newSquad);
     if (captainId === playerId) setCaptainId(null);
     if (viceCaptainId === playerId) setViceCaptainId(null);
@@ -343,7 +346,7 @@ export default function FantasyHub() {
         <p className="mt-4 text-zinc-500 font-black uppercase tracking-[0.2em] text-[9px]">Global Player Intelligence</p>
       </header>
 
-      {/* البحث */}
+      {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         {isSyncing && (
           <div className="mb-4 flex flex-col items-center gap-2">
@@ -373,7 +376,7 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* المقارنة */}
+      {/* المقارنة والبيانات */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4">
           <AnimatePresence mode="wait">
@@ -411,21 +414,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* التوقعات */}
-      <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl">
-          <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
-          <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Weekly Predictor</h2>
-          {predictedPlayer ? (
-            <div className="mt-6 inline-flex items-center gap-4 bg-zinc-900/80 p-4 px-6 rounded-2xl border border-emerald-500/50 shadow-xl">
-              <img src={predictedPlayer.team?.crest} className="h-10 w-10 object-contain" />
-              <div className="text-left"><p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Prediction Locked! 🔒</p><h3 className="text-white font-black uppercase italic text-sm">{predictedPlayer.name}</h3></div>
-              <button onClick={()=>setPredictedPlayer(null)} className="text-zinc-600 hover:text-red-400 underline text-[9px] ml-4 font-black uppercase transition-colors">Change</button>
-            </div>
-          ) : (
-            <button onClick={()=>setShowPredictorModal(true)} className="mt-8 bg-white text-black font-black px-10 py-4 rounded-full uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl shadow-white/5">Make Prediction</button>
-          )}
-      </section>
-
       {/* الملعب التفاعلي */}
       <section className="flex flex-col items-center relative z-0">
          <SquadBuilder 
@@ -445,6 +433,21 @@ export default function FantasyHub() {
            swapSourceIndex={swapSourceIndex}
            onSlotClick={handleSlotClick} 
          />
+      </section>
+
+      {/* التوقعات */}
+      <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl mt-8">
+          <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
+          <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Weekly Predictor</h2>
+          {predictedPlayer ? (
+            <div className="mt-6 inline-flex items-center gap-4 bg-zinc-900/80 p-4 px-6 rounded-2xl border border-emerald-500/50 shadow-xl">
+              <img src={predictedPlayer.team?.crest} className="h-10 w-10 object-contain" />
+              <div className="text-left"><p className="text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Prediction Locked! 🔒</p><h3 className="text-white font-black uppercase italic text-sm">{predictedPlayer.name}</h3></div>
+              <button onClick={()=>setPredictedPlayer(null)} className="text-zinc-600 hover:text-red-400 underline text-[9px] ml-4 font-black uppercase transition-colors">Change</button>
+            </div>
+          ) : (
+            <button onClick={()=>setShowPredictorModal(true)} className="mt-8 bg-white text-black font-black px-10 py-4 rounded-full uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl shadow-white/5">Make Prediction</button>
+          )}
       </section>
 
       {/* الماتشات */}
@@ -564,6 +567,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* النوافذ التانية (الذكاء الاصطناعي والتوقع) */}
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
