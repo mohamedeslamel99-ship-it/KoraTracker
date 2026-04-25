@@ -6,15 +6,27 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 
-// 🚨 خوارزمية تصنيف المراكز
+// 🚨 خوارزمية الفانتازي الرسمية (FPL Strict Override)
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
+  const name = String(p.name || '').toLowerCase();
+
+  // 1. إجبار الأجنحة وصناع اللعب إنهم يكونوا خط وسط (MID) زي الفانتازي بالظبط
+  const forceMidfielders = ['salah', 'son heung-min', 'son', 'saka', 'palmer', 'foden', 'gordon', 'bowen', 'mbeumo', 'diogo jota', 'luis díaz', 'diaz', 'sterling', 'rashford', 'garnacho', 'bruno fernandes', 'ødegaard', 'eze', 'gross', 'mcginn', 'douglas luiz'];
+  if (forceMidfielders.some(m => name.includes(m))) return 'MID';
+
+  // 2. إجبار المهاجمين الصرحاء (FWD)
+  const forceForwards = ['haaland', 'watkins', 'isak', 'solanke', 'nunez', 'darwin', 'hojlund', 'havertz', 'toney', 'mateta', 'carlton morris', 'awoniyi', 'joao pedro'];
+  if (forceForwards.some(f => name.includes(f))) return 'FWD';
+
+  // 3. لو مش من المشاهير دول، نعتمد على قراءة الـ API مع تصحيحها
   const pos = String(p.position || p.section || '').toLowerCase();
   if (pos === 'gk' || pos.includes('goal')) return 'GK';
   if (pos === 'def' || pos === 'df' || pos.includes('defen') || pos.includes('back') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb')) return 'DEF';
   if (pos === 'mid' || pos === 'mf' || pos.includes('midfield') || pos.includes('wing') || pos.includes('cm') || pos.includes('dm') || pos.includes('am')) return 'MID';
   if (pos === 'fwd' || pos === 'fw' || pos.includes('forward') || pos.includes('offen') || pos.includes('attack') || pos.includes('strik') || pos.includes('st')) return 'FWD';
-  return 'MID';
+  
+  return 'MID'; // الافتراضي لو فشل كل حاجة
 };
 
 // 💰 محرك أسعار ونقاط الفانتازي الواقعي
@@ -47,9 +59,9 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   return { price, points };
 };
 
-// 🛡️ قاعدة بيانات احتياطية
+// 🛡️ قاعدة بيانات الدوري الإنجليزي الاحتياطية بالمراكز الصحيحة
 const fallbackDb = [
-  { id: 3754, name: 'Mohamed Salah', position: 'Offence', goals: 20, assists: 10, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
+  { id: 3754, name: 'Mohamed Salah', position: 'Midfield', goals: 20, assists: 10, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
   { id: 3823, name: 'Erling Haaland', position: 'Offence', goals: 25, assists: 5, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
   { id: 8004, name: 'Bukayo Saka', position: 'Midfield', goals: 16, assists: 10, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
   { id: 8011, name: 'Cole Palmer', position: 'Midfield', goals: 22, assists: 11, team: { id: 61, name: 'Chelsea FC', shortName: 'CHE', crest: 'https://crests.football-data.org/61.png' } },
@@ -161,7 +173,7 @@ export default function FantasyHub() {
     }
   }, [leaguePlayers]);
 
-  // 🛡️ التحديث الجذري: منع الاستنساخ وتوحيد البيانات
+  // 🛡️ التحديث الجذري: منع الاستنساخ وتوحيد البيانات + فلتر الدوري الإنجليزي فقط
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
@@ -169,13 +181,19 @@ export default function FantasyHub() {
 
       const addPlayerToMap = (p: any, form: string, overrideGoals?: number, overrideAssists?: number) => {
         if (!p || !p.id || !p.name) return;
+        
+        // 🚨 حماية: نضمن إن اللاعب في الدوري الإنجليزي فقط (نظام الفانتازي)
+        const leagueId = p.league || p.competition?.code;
+        // لو الـ API جاب لاعب من دوري تاني متسجلوش
+        if (leagueId && leagueId !== 'PL') return;
+
         const pId = Number(p.id); // تحويل أي ID لرقم عشان الـ String ميبوظش الماب
         const normalizedName = p.name.trim().toLowerCase();
 
-        if (seenNames.has(normalizedName)) return; // فلتر الأسماء المكررة
+        if (seenNames.has(normalizedName)) return; // فلتر الأسماء المكررة (عشان هالاند ميكررش)
         seenNames.add(normalizedName);
 
-        const pos = getPlayerPosition(p);
+        const pos = getPlayerPosition(p); // الخوارزمية الصارمة بتحدد المركز
         const goals = overrideGoals ?? (p.goals || 0);
         const assists = overrideAssists ?? (p.assists || 0);
         const { price, points } = getRealisticFPLData(p.name, pos, goals, assists, pId);
@@ -189,7 +207,7 @@ export default function FantasyHub() {
           price,
           form,
           points,
-          position: pos
+          position: pos // (MID, FWD, DEF, GK)
         });
       };
 
@@ -197,7 +215,7 @@ export default function FantasyHub() {
       leaguePlayers.forEach(p => addPlayerToMap(p, ((p.id % 50) / 10).toFixed(1)));
       (plScorers?.scorers || []).forEach((s: any) => {
         if (s.player) {
-          addPlayerToMap({ ...s.player, team: s.team || { name: 'Unknown' } }, ((s.player.id % 50) / 10).toFixed(1), s.goals, s.assists);
+          addPlayerToMap({ ...s.player, team: s.team || { name: 'Unknown' }, league: 'PL' }, ((s.player.id % 50) / 10).toFixed(1), s.goals, s.assists);
         }
       });
 
@@ -208,7 +226,7 @@ export default function FantasyHub() {
   const globalProspects = useMemo(() => {
     const prospects: any[] = [];
     const seenTeams = new Set();
-    const plPlayers = allPlayers.filter(p => p.league === 'PL');
+    const plPlayers = allPlayers;
     for (const player of plPlayers) {
       if (player.team?.id && !seenTeams.has(player.team.id)) {
         prospects.push(player);
@@ -221,7 +239,8 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
-    const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 30);
+    // فلتر وقت البحث برضه لضمان إن اللعيبة دي PL بس
+    const results = allPlayers.filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase()))).slice(0, 30);
     setSearchResults(results);
   };
 
@@ -471,7 +490,7 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 🤖 التحديث الجذري: خوارزمية ذكية لاختيار الفريق (تحترم الميزانية وتمنع التكرار)
+  // 🤖 التحديث الجذري: خوارزمية ذكية لاختيار الفريق (تحترم الميزانية وتمنع التكرار تماماً)
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
     if (pool.length < 40) {
@@ -487,17 +506,14 @@ export default function FantasyHub() {
     const pickedIds = new Set();
     let totalSpent = 0;
 
-    // دالة السحب الذكية (بتراقب الميزانية)
     const pick = (list: any[], count: number) => {
       const picked = [];
       for (let p of list) {
         if (picked.length >= count) break;
-        if (pickedIds.has(p.id)) continue; // 🛡️ حماية ضد استنساخ اللاعب في نفس التشكيلة
+        if (pickedIds.has(p.id)) continue; 
         if ((teamCounts[p.team?.id] || 0) >= 3) continue;
 
         const price = parseFloat(p.price);
-        
-        // خوارزمية حماية الميزانية: لو صرفنا أكتر من 85 مليون ولسه التشكيلة مكملتش، متجيبش حد غالي
         if (totalSpent > 85 && price > 6.0) continue;
 
         picked.push(p);
@@ -508,6 +524,7 @@ export default function FantasyHub() {
       return picked;
     };
 
+    // الترتيب مهم عشان يبدأ بالمهاجمين الغاليين الأول بعدين يكمل بالباقي
     const f = pick(fwds, 3);
     const m = pick(mids, 5);
     const d = pick(defs, 5);
@@ -533,7 +550,6 @@ export default function FantasyHub() {
     
     setSquad(newSquad); 
     
-    // وضع شارة الكابتن لأقوى لاعب
     const bestPlayer = [...newSquad].filter(s => s.player && !s.isBench).sort((a, b) => b.player.points - a.player.points)[0];
     if (bestPlayer) setCaptainId(bestPlayer.player.id);
   };
@@ -639,7 +655,6 @@ export default function FantasyHub() {
          <div className="lg:col-span-4 w-full flex flex-col gap-6 sticky top-24">
             <AnimatePresence mode="wait">
                
-               {/* 1. حالة التحميل */}
                {(isGeneratingAI || isRoasting) ? (
                  <motion.div key="loading" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="rounded-[2rem] border border-zinc-800 bg-[#111113] p-12 text-center shadow-inner flex flex-col items-center justify-center min-h-[350px]">
                     <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
@@ -647,7 +662,6 @@ export default function FantasyHub() {
                  </motion.div>
                ) 
                
-               /* 2. حالة تقرير الذكاء الاصطناعي */
                : aiReport ? (
                  <motion.div key="ai" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-zinc-900 border border-emerald-500/30 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
                     <button onClick={()=>setAiReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -672,7 +686,6 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 3. حالة قصف الجبهة */
                : roastReport ? (
                  <motion.div key="roast" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-red-950/20 border border-red-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(220,38,38,0.1)] relative">
                     <button onClick={()=>setRoastReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -686,7 +699,6 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 4. حالة معلومات اللاعب */
                : activePlayer ? (
                  <motion.div key="player" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="rounded-[2rem] border border-indigo-500/30 bg-[#111113] p-8 shadow-2xl relative">
                     <button onClick={() => setActivePlayer(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -704,7 +716,6 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 5. الحالة الافتراضية */
                : (
                  <motion.div key="empty" className="rounded-[2rem] border border-dashed border-zinc-800 bg-[#111113]/50 p-12 text-center shadow-inner flex flex-col items-center justify-center min-h-[350px]">
                     <Ghost className="text-zinc-800 mb-4" size={40} />
@@ -716,7 +727,7 @@ export default function FantasyHub() {
          </div>
       </section>
 
-      {/* باقي الأقسام زي التوقعات والماتشات وشريط المقارنة زي ما هي */}
+      {/* باقي الصفحة */}
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl mt-8">
           <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
           <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Weekly Predictor</h2>
