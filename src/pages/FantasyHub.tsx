@@ -117,7 +117,6 @@ export default function FantasyHub() {
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
 
-  // APIs
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
@@ -131,7 +130,6 @@ export default function FantasyHub() {
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // 💾 التعديل 1: حفظ اللعيبة في الذاكرة فوراً أول ما ييجوا عشان ميضيعوش
   useEffect(() => {
     if (leaguePlayers.length > 0) {
       localStorage.setItem('kt_players_db', JSON.stringify(leaguePlayers));
@@ -219,14 +217,12 @@ export default function FantasyHub() {
     return () => clearTimeout(timer);
   }, [search, allPlayers]);
 
-  // 🔄 التعديل 2: دالة مزامنة إجبارية عشان لو الداتا علقت معاك
   const forceManualSync = () => {
     localStorage.removeItem('kt_last_sync');
     localStorage.removeItem('kt_sync_progress');
     setSyncedTeams(0);
     setIsSyncing(false);
     setLeaguePlayers([]);
-    // Reload SWR data trick
     window.location.reload();
   };
 
@@ -314,6 +310,7 @@ export default function FantasyHub() {
     }
   };
 
+  // 🧠 خوارزمية التقييم الديناميكية الجديدة (Real AI Analysis)
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -323,51 +320,98 @@ export default function FantasyHub() {
     setIsGeneratingAI(true);
 
     setTimeout(() => {
+      // 1. حساب إحصائيات التشكيلة
       const totalGoals = active.reduce((sum, p) => sum + (p.goals || 0), 0);
       const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
+      const totalCost = active.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0) + bench.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0);
       
-      const bestPlayer = [...active].sort((a, b) => {
-        const scoreA = (a.goals || 0) * 5 + (a.assists || 0) * 3 + parseFloat(a.price || '0');
-        const scoreB = (b.goals || 0) * 5 + (b.assists || 0) * 3 + parseFloat(b.price || '0');
-        return scoreB - scoreA;
-      })[0];
-      
+      const defPoints = active.filter(p => p.position === 'DEF' || p.position === 'GK').reduce((sum, p) => sum + (p.points || 0), 0);
+      const attPoints = active.filter(p => p.position === 'FWD' || p.position === 'MID').reduce((sum, p) => sum + (p.points || 0), 0);
+
+      // تحديد أفضل لاعب عشان نقيمه بالكابتن
+      const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+      const bestFwd = active.filter(p => p.position === 'FWD').sort((a,b) => (b.goals || 0) - (a.goals || 0))[0];
+      const captainPlayer = active.find(p => p.id === captainId);
       const isCaptainBest = captainId === bestPlayer?.id;
 
-      let calculatedScore = Math.floor((totalPoints / 1100) * 100);
-      if (calculatedScore < 45) calculatedScore = Math.floor(Math.random() * 15) + 45; 
-      if (calculatedScore > 99) calculatedScore = 99;
+      // 2. حساب السكور الحقيقي (متوسط قوي في الفانتازي بيبقى 950-1000 نقطة)
+      let baseScore = (totalPoints / 950) * 100;
 
+      // خصم نقط لو عديت الميزانية الـ 100م
+      if (totalCost > 100) baseScore -= (totalCost - 100) * 2;
+      if (isCaptainBest) baseScore += 5; // مكافأة
+
+      let finalScore = Math.floor(Math.max(30, Math.min(99, baseScore)));
+      finalScore += Math.floor(Math.random() * 5) - 2; // عشوائية خفيفة عشان تحس بالتغيير
+      finalScore = Math.max(30, Math.min(99, finalScore));
+
+      // 3. تحليل نقاط القوة والضعف
       const strengths = [];
       const weaknesses = [];
 
-      if (totalGoals > 60) strengths.push(`هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف مع فرقهم.`);
-      else if (totalGoals > 35) strengths.push(`معدل تهديفي جيد (${totalGoals} هدف)، التشكيلة متوازنة.`);
-      else weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس!`);
+      // الهجوم
+      if (totalGoals > 50) {
+        const phrases = [
+          `هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف، هجومك مرعب!`,
+          `ماكينة أهداف: التشكيلة محققة ${totalGoals} جول في الواقع.`,
+          bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`
+        ];
+        strengths.push(phrases[Math.floor(Math.random() * phrases.length)]);
+      } else {
+        weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس! محتاج مهاجمين أشرس.`);
+      }
 
-      if (totalAssists > 40) strengths.push(`صناع لعب ممتازين: التشكيلة بتضمن نقط من الأسيستات.`);
+      // الدفاع
+      if (defPoints > attPoints * 0.6) {
+        strengths.push(`دفاعك صلب وبيجمع نقط ممتازة جداً مقارنة بخط الهجوم.`);
+      } else if (defPoints < 150) {
+        weaknesses.push(`خط الدفاع شوارع وبيخسر نقط كتير، ركز على لعيبة بتجيب Clean Sheets.`);
+      }
 
-      if (isCaptainBest && bestPlayer) strengths.push(`اختيار الكابتن (${bestPlayer.name}) مثالي جداً ومبني على إحصائيات قوية.`);
-      else if (bestPlayer) weaknesses.push(`الكابتن غلط.. الأفضل تكبتن ${bestPlayer.name} لأنه النجم الأقوى في تشكيلتك.`);
+      // الميزانية
+      if (totalCost > 100.5) {
+        weaknesses.push(`ميزانيتك تخطت الـ 100 مليون (£${totalCost.toFixed(1)}m)! ده مش قانوني في الفانتازي لازم تبيع حد غالي.`);
+      } else if (totalCost < 90) {
+        weaknesses.push(`إنت سايب فلوس كتير في البنك (£${(100 - totalCost).toFixed(1)}m)، استثمرها في كابتن قوي.`);
+      } else {
+        strengths.push(`إدارة الميزانية ممتازة جداً ومحسوبة بالمللي (£${totalCost.toFixed(1)}m).`);
+      }
 
-      if (bench.length < 4) weaknesses.push(`الدكة مش كاملة، لو حد اتصاب مش هتلاقي بديل ينزلك نقط.`);
-      else if (bench.some(p => parseFloat(p.price || '0') > 6.5)) weaknesses.push(`إنت دافع فلوس كتير جداً في لاعب احتياطي، ركز عالميزانية الأساسية.`);
-      else strengths.push(`ميزانية الدكة ممتازة واقتصادية جداً.`);
+      // الكابتن
+      if (captainPlayer) {
+        if (isCaptainBest) {
+          strengths.push(`اختيار الكابتن (${captainPlayer.name.split(' ').pop()}) مثالي ومبني على أعلى إحصائيات.`);
+        } else {
+          weaknesses.push(`مضيع نقط الكابتنة على ${captainPlayer.name.split(' ').pop()}.. الأفضل تكبتن ${bestPlayer?.name.split(' ').pop()}.`);
+        }
+      }
 
+      // الدكة
+      if (bench.length < 4) {
+        weaknesses.push(`دكة البدلاء بتاعتك مش كاملة، لو لاعب اتصاب أو قعد احتياطي هتلبس في الحيط.`);
+      } else if (bench.some(p => parseFloat(p.price || '0') > 6.5)) {
+        weaknesses.push(`دافع مبالغ ضخمة في لعيبة دكة، بيع حد منهم وهات أسياي قوي.`);
+      }
+
+      // لخبطة المصفوفة عشان الجمل تتغير كل مرة
+      strengths.sort(() => 0.5 - Math.random());
+      weaknesses.sort(() => 0.5 - Math.random());
+
+      // الألوان
       let ratingColor = "text-emerald-400";
       let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
 
-      if (calculatedScore < 60) {
+      if (finalScore < 50) {
         ratingColor = "text-red-500";
         ratingBg = "bg-red-500/10 border-red-500/30";
-      } else if (calculatedScore < 80) {
+      } else if (finalScore < 75) {
         ratingColor = "text-yellow-400";
         ratingBg = "bg-yellow-500/10 border-yellow-500/30";
       }
 
       setAiReport({ 
-        score: calculatedScore, 
+        score: finalScore, 
         strengths: strengths.slice(0, 3), 
         weaknesses: weaknesses.slice(0, 2),
         ratingColor, 
