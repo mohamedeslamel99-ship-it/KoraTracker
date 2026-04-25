@@ -161,34 +161,46 @@ export default function FantasyHub() {
     }
   }, [leaguePlayers]);
 
+  // 🛡️ التحديث الجذري: منع الاستنساخ وتوحيد البيانات
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
-      
-      fallbackDb.forEach(p => {
-         const pos = getPlayerPosition(p);
-         const { price, points } = getRealisticFPLData(p.name, pos, p.goals || 0, p.assists || 0, p.id);
-         uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, assists: p.assists || 0, price, form: '8.0', points, position: pos });
-      });
-      
-      leaguePlayers.forEach(p => { 
-        if (p?.id) {
-          const pos = getPlayerPosition(p);
-          const { price, points } = getRealisticFPLData(p.name, pos, p.goals || 0, p.assists || 0, p.id);
-          uniqueMap.set(p.id, { ...p, league: 'PL', goals: p.goals || 0, assists: p.assists || 0, price, form: ((p.id % 50) / 10).toFixed(1), points, position: pos }); 
+      const seenNames = new Set(); // عشان لو الـ API جاب نفس الاسم بـ ID مختلف نمنعه
+
+      const addPlayerToMap = (p: any, form: string, overrideGoals?: number, overrideAssists?: number) => {
+        if (!p || !p.id || !p.name) return;
+        const pId = Number(p.id); // تحويل أي ID لرقم عشان الـ String ميبوظش الماب
+        const normalizedName = p.name.trim().toLowerCase();
+
+        if (seenNames.has(normalizedName)) return; // فلتر الأسماء المكررة
+        seenNames.add(normalizedName);
+
+        const pos = getPlayerPosition(p);
+        const goals = overrideGoals ?? (p.goals || 0);
+        const assists = overrideAssists ?? (p.assists || 0);
+        const { price, points } = getRealisticFPLData(p.name, pos, goals, assists, pId);
+
+        uniqueMap.set(pId, {
+          ...p,
+          id: pId,
+          league: 'PL',
+          goals,
+          assists,
+          price,
+          form,
+          points,
+          position: pos
+        });
+      };
+
+      fallbackDb.forEach(p => addPlayerToMap(p, '8.0'));
+      leaguePlayers.forEach(p => addPlayerToMap(p, ((p.id % 50) / 10).toFixed(1)));
+      (plScorers?.scorers || []).forEach((s: any) => {
+        if (s.player) {
+          addPlayerToMap({ ...s.player, team: s.team || { name: 'Unknown' } }, ((s.player.id % 50) / 10).toFixed(1), s.goals, s.assists);
         }
       });
 
-      const combined = [ ...(plScorers?.scorers || []).map((s:any) => ({...s, league: 'PL'})) ];
-      
-      combined.forEach(s => {
-        if (s?.player?.id) { 
-          const pos = getPlayerPosition(s.player);
-          const { price, points } = getRealisticFPLData(s.player.name, pos, s.goals || 0, s.assists || 0, s.player.id);
-          uniqueMap.set(s.player.id, { ...s.player, league: s.league, team: s.team || { name: 'Unknown' }, goals: s.goals || 0, assists: s.assists || 0, price, form: ((s.player.id % 50) / 10).toFixed(1), points, position: pos }); 
-        }
-      });
-      
       return Array.from(uniqueMap.values());
     } catch (err) { return []; }
   }, [plScorers, leaguePlayers]);
@@ -347,7 +359,6 @@ export default function FantasyHub() {
 
     if (active.length < 11) { alert("⚠️ اختار 11 لاعب أساسي الأول عشان أقدر أحلل التشكيلة صح!"); return; }
     
-    // تصفير أي تقارير قديمة وإظهار اللودينج في الشريط الجانبي
     setAiReport(null);
     setRoastReport(null);
     setActivePlayer(null);
@@ -460,41 +471,47 @@ export default function FantasyHub() {
     }, 1500);
   };
 
+  // 🤖 التحديث الجذري: خوارزمية ذكية لاختيار الفريق (تحترم الميزانية وتمنع التكرار)
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
-    const gks = pool.filter(p => p.position === 'GK');
-    const defs = pool.filter(p => p.position === 'DEF');
-    const mids = pool.filter(p => p.position === 'MID');
-    const fwds = pool.filter(p => p.position === 'FWD');
-
-    if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
+    if (pool.length < 40) {
       alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
     }
-    
-    const calculatePlayerPower = (p: any) => {
-      const goals = p.goals || 0;
-      const assists = p.assists || 0;
-      const price = parseFloat(p.price || 0);
-      const points = p.points || 0;
-      return (goals * 25) + (assists * 15) + points + (price * 5);
-    };
 
-    const sorted = [...pool].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
-    
+    const gks = pool.filter(p => p.position === 'GK').sort((a, b) => b.points - a.points);
+    const defs = pool.filter(p => p.position === 'DEF').sort((a, b) => b.points - a.points);
+    const mids = pool.filter(p => p.position === 'MID').sort((a, b) => b.points - a.points);
+    const fwds = pool.filter(p => p.position === 'FWD').sort((a, b) => b.points - a.points);
+
     const teamCounts: any = {};
-    const pick = (pos: string, count: number) => {
+    const pickedIds = new Set();
+    let totalSpent = 0;
+
+    // دالة السحب الذكية (بتراقب الميزانية)
+    const pick = (list: any[], count: number) => {
       const picked = [];
-      for (let p of sorted) {
+      for (let p of list) {
         if (picked.length >= count) break;
-        if (p.position !== pos) continue;
+        if (pickedIds.has(p.id)) continue; // 🛡️ حماية ضد استنساخ اللاعب في نفس التشكيلة
         if ((teamCounts[p.team?.id] || 0) >= 3) continue;
+
+        const price = parseFloat(p.price);
+        
+        // خوارزمية حماية الميزانية: لو صرفنا أكتر من 85 مليون ولسه التشكيلة مكملتش، متجيبش حد غالي
+        if (totalSpent > 85 && price > 6.0) continue;
+
         picked.push(p);
+        pickedIds.add(p.id);
         teamCounts[p.team?.id] = (teamCounts[p.team?.id] || 0) + 1;
+        totalSpent += price;
       }
       return picked;
     };
-    
-    const f = pick('FWD', 3); const m = pick('MID', 5); const d = pick('DEF', 5); const g = pick('GK', 2);
+
+    const f = pick(fwds, 3);
+    const m = pick(mids, 5);
+    const d = pick(defs, 5);
+    const g = pick(gks, 2);
     
     const newSquad = [
       { role: 'GK', isBench: false, player: g[0] || null },
@@ -513,8 +530,12 @@ export default function FantasyHub() {
       { role: 'MID', isBench: true, player: m[4] || null },
       { role: 'FWD', isBench: true, player: f[2] || null },
     ];
+    
     setSquad(newSquad); 
-    if (f[0]) setCaptainId(f[0].id);
+    
+    // وضع شارة الكابتن لأقوى لاعب
+    const bestPlayer = [...newSquad].filter(s => s.player && !s.isBench).sort((a, b) => b.player.points - a.player.points)[0];
+    if (bestPlayer) setCaptainId(bestPlayer.player.id);
   };
 
   const upcomingGameweeks = useMemo(() => {
@@ -590,10 +611,10 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 🚀 التصميم الجديد: الملعب والتحليل جنب بعض (Side-by-side Layout) */}
+      {/* 🚀 الملعب والتحليل جنب بعض */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-0">
          
-         {/* 🏟️ الجزء اليمين: الملعب التفاعلي (بياخد 8 أعمدة) */}
+         {/* 🏟️ الجزء اليمين: الملعب التفاعلي */}
          <div className="lg:col-span-8 w-full flex flex-col items-center bg-[#111113]/50 rounded-[2.5rem] p-4 border border-zinc-800/50 shadow-2xl">
             <SquadBuilder 
               squad={squad} 
@@ -614,7 +635,7 @@ export default function FantasyHub() {
             />
          </div>
 
-         {/* 🤖 الجزء الشمال: المساعد الذكي (بياخد 4 أعمدة ومثبت عشان ينزل معاك) */}
+         {/* 🤖 الجزء الشمال: المساعد الذكي */}
          <div className="lg:col-span-4 w-full flex flex-col gap-6 sticky top-24">
             <AnimatePresence mode="wait">
                
@@ -626,7 +647,7 @@ export default function FantasyHub() {
                  </motion.div>
                ) 
                
-               /* 2. حالة تقرير الذكاء الاصطناعي (AI Analysis) */
+               /* 2. حالة تقرير الذكاء الاصطناعي */
                : aiReport ? (
                  <motion.div key="ai" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-zinc-900 border border-emerald-500/30 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
                     <button onClick={()=>setAiReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -651,7 +672,7 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 3. حالة قصف الجبهة (Roast Report) */
+               /* 3. حالة قصف الجبهة */
                : roastReport ? (
                  <motion.div key="roast" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-red-950/20 border border-red-500/30 p-8 rounded-[2rem] shadow-[0_0_50px_rgba(220,38,38,0.1)] relative">
                     <button onClick={()=>setRoastReport(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -665,7 +686,7 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 4. حالة معلومات اللاعب (Active Player) */
+               /* 4. حالة معلومات اللاعب */
                : activePlayer ? (
                  <motion.div key="player" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="rounded-[2rem] border border-indigo-500/30 bg-[#111113] p-8 shadow-2xl relative">
                     <button onClick={() => setActivePlayer(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white"><X size={18} /></button>
@@ -683,7 +704,7 @@ export default function FantasyHub() {
                  </motion.div>
                )
 
-               /* 5. الحالة الافتراضية (Awaiting Input) */
+               /* 5. الحالة الافتراضية */
                : (
                  <motion.div key="empty" className="rounded-[2rem] border border-dashed border-zinc-800 bg-[#111113]/50 p-12 text-center shadow-inner flex flex-col items-center justify-center min-h-[350px]">
                     <Ghost className="text-zinc-800 mb-4" size={40} />
