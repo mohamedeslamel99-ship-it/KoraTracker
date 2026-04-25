@@ -273,17 +273,40 @@ export default function FantasyHub() {
     }, 1500);
   };
 
+  // 🔥 التعديل هنا: خوارزمية قصف الجبهات الديناميكية 🔥
   const generateRoastReport = () => {
     const active = squad.filter(s => !s.isBench && s.player);
-    if (active.length < 11) { alert("حط لعيبة الأول!"); return; }
+    if (active.length < 1) { alert("حط لعيبة الأول عشان أعرف أقصف جبهتك! 😂"); return; }
+    
     setIsRoasting(true);
+
+    // مكتبة إفيهات قصف الجبهات
+    const roasts = [
+      "تشكيلة عظيمة.. لو بتلعب في دوري المظاليم! 😂",
+      "إنت متأكد إن دي تشكيلة كورة مش فريق كبادي؟ 🤡",
+      "الذكاء الاصطناعي بيعيط من ساعة ما شاف اختياراتك.. حرام عليك! 😭",
+      "لو جوارديولا شاف التشكيلة دي هيسيب التدريب ويفتح محل كشري 🤦‍♂️",
+      "خط النص عندك أبطأ من سلحفاة حامل.. إيه ده! 🐌",
+      "دي تشكيلة تجيب نقط بالماينس مش بالموجب.. امسح الأكونت أحسن! 💀",
+      "أنا لو مكان اللعيبة دي هعتزل قبل ما الجولة تبدأ 🚑",
+      "دفاعك ده شوارع.. أي حد معدي هيسجل فيك! 🚦",
+      "تشكيلة ممتازة جداً.. ناقصها بس 11 لاعب بيفهموا كورة وتظبط 🤡",
+      "إنت حاطط الكابتن ده بناءً على رؤية فنية ولا ضربت الودع؟ 🔮",
+      "اللعيبة دي آخرها تلعب حجز خماسي يوم الخميس، مش فانتازي! ⚽",
+      "تشكيلة تبكي الحجر.. ربنا يعينك على نفسك! 💔"
+    ];
+
     setTimeout(() => {
-      setRoastReport(["تشكيلة عظيمة.. بس ياريت متلعبش بيها عشان صحتك! 😂"]);
+      // بنختار جملتين عشوائيتين مختلفتين كل مرة
+      const r1 = roasts[Math.floor(Math.random() * roasts.length)];
+      let r2 = roasts[Math.floor(Math.random() * roasts.length)];
+      while(r1 === r2) { r2 = roasts[Math.floor(Math.random() * roasts.length)]; }
+
+      setRoastReport([r1, r2]);
       setIsRoasting(false);
-    }, 1000);
+    }, 1500); // 1.5 seconds of suspense 😂
   };
 
-  // 🌟 التعديل هنا: خوارزمية ذكية لاختيار اللعيبة الأساسية والقوية 🌟
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
     const gks = pool.filter(p => p.position === 'GK');
@@ -295,17 +318,14 @@ export default function FantasyHub() {
       alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
     }
     
-    // دالة لحساب "قوة اللاعب" بناءً على كل إحصائياته عشان نختار أحسن ناس
     const calculatePlayerPower = (p: any) => {
       const goals = p.goals || 0;
       const assists = p.assists || 0;
       const price = parseFloat(p.price || 0);
       const points = p.points || 0;
-      // بنجمع العوامل دي: الأهداف الأهم، وبعدها السعر والنقاط كدليل على إن اللاعب أساسي ونجم
       return (goals * 25) + (assists * 15) + points + (price * 5);
     };
 
-    // ترتيب اللاعبين بناءً على خوارزمية القوة (مش الأهداف بس)
     const sorted = [...pool].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
     
     const teamCounts: any = {};
@@ -656,12 +676,16 @@ export default function FantasyHub() {
             </motion.div>
           </div>
         )}
+        
+        {/* نافذة الروست (قصف الجبهة) */}
         {roastReport && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95">
             <motion.div initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-red-950/20 border border-red-500/30 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-[0_0_50px_rgba(220,38,38,0.2)]">
               <Flame className="mx-auto text-red-500 mb-6" size={50} />
               <h2 className="text-2xl font-black text-red-500 uppercase italic mb-8 tracking-tighter">AI Squad Roast 🤡</h2>
-              {roastReport.map((r,i)=>(<p key={i} className="text-red-100 font-black text-lg leading-relaxed italic" dir="rtl">{r}</p>))}
+              <div className="space-y-4">
+                {roastReport.map((r,i)=>(<p key={i} className="text-red-100 font-black text-lg leading-relaxed italic" dir="rtl">{r}</p>))}
+              </div>
               <button onClick={()=>setRoastReport(null)} className="mt-10 w-full py-4 bg-red-600 text-white font-black rounded-2xl uppercase text-xs hover:bg-red-500 transition-all shadow-xl shadow-red-600/20">كفاية إهانة ورجعني 😂</button>
             </motion.div>
           </div>
