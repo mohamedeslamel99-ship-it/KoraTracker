@@ -6,51 +6,31 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 
-// 🚨 خوارزمية الفانتازي الرسمية (FPL Strict Override)
+// 🚨 خوارزمية الفانتازي لضبط المراكز (لأن الـ API بيعتبر الأجنحة هجوم)
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
   const name = String(p.name || '').toLowerCase();
 
-  // 1. إجبار الأجنحة وصناع اللعب إنهم يكونوا خط وسط (MID) زي الفانتازي بالظبط
-  const forceMidfielders = ['salah', 'son heung-min', 'son', 'saka', 'palmer', 'foden', 'gordon', 'bowen', 'mbeumo', 'diogo jota', 'luis díaz', 'diaz', 'sterling', 'rashford', 'garnacho', 'bruno fernandes', 'ødegaard', 'eze', 'gross', 'mcginn', 'douglas luiz'];
+  const forceMidfielders = ['salah', 'saka', 'palmer', 'foden', 'gordon', 'bowen', 'mbeumo', 'diogo jota', 'luis díaz', 'diaz', 'sterling', 'rashford', 'garnacho', 'bruno fernandes', 'ødegaard', 'eze', 'gross', 'mcginn', 'douglas luiz'];
   if (forceMidfielders.some(m => name.includes(m))) return 'MID';
 
-  // 2. إجبار المهاجمين الصرحاء (FWD)
   const forceForwards = ['haaland', 'watkins', 'isak', 'solanke', 'nunez', 'darwin', 'hojlund', 'havertz', 'toney', 'mateta', 'carlton morris', 'awoniyi', 'joao pedro'];
   if (forceForwards.some(f => name.includes(f))) return 'FWD';
 
-  // 3. لو مش من المشاهير دول، نعتمد على قراءة الـ API مع تصحيحها
   const pos = String(p.position || p.section || '').toLowerCase();
   if (pos === 'gk' || pos.includes('goal')) return 'GK';
   if (pos === 'def' || pos === 'df' || pos.includes('defen') || pos.includes('back') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb')) return 'DEF';
   if (pos === 'mid' || pos === 'mf' || pos.includes('midfield') || pos.includes('wing') || pos.includes('cm') || pos.includes('dm') || pos.includes('am')) return 'MID';
   if (pos === 'fwd' || pos === 'fw' || pos.includes('forward') || pos.includes('offen') || pos.includes('attack') || pos.includes('strik') || pos.includes('st')) return 'FWD';
   
-  return 'MID'; // الافتراضي لو فشل كل حاجة
+  return 'MID'; 
 };
 
-// 💰 محرك أسعار ونقاط الفانتازي الواقعي
-const getRealisticFPLData = (name: string, pos: string, goals: number, assists: number, id: number) => {
-  const n = (name || '').toLowerCase();
-  const exactPrices: Record<string, string> = {
-    'haaland': '15.0', 'salah': '12.5', 'palmer': '10.5', 'saka': '10.0', 'son heung-min': '10.0',
-    'foden': '9.5', 'de bruyne': '10.5', 'watkins': '9.0', 'isak': '8.5', 'gordon': '7.5',
-    'bowen': '7.5', 'solanke': '7.5', 'ødegaard': '8.5', 'bruno fernandes': '8.5', 'luis díaz': '7.5',
-    'jota': '7.5', 'mbeumo': '7.0', 'eze': '7.0', 'havertz': '8.0', 'gabriel magalhães': '6.0',
-    'van dijk': '6.0', 'alexander-arnold': '7.0', 'saliba': '6.0', 'porro': '5.5', 'trippier': '6.0',
-    'ederson': '5.5', 'alisson': '5.5', 'raya': '5.5', 'donnarumma': '5.5', 'pickford': '5.0'
-  };
-
-  let price = '5.0';
-  let foundExact = Object.keys(exactPrices).find(k => n.includes(k));
-  
-  if (foundExact) { 
-    price = exactPrices[foundExact]; 
-  } else {
-    let base = pos === 'FWD' ? 5.5 : pos === 'MID' ? 5.0 : pos === 'DEF' ? 4.5 : 4.0;
-    let bonus = (goals * 0.2) + (assists * 0.1);
-    price = Math.min(base + bonus, 9.5).toFixed(1);
-  }
+// 💰 محرك أسعار ونقاط ديناميكي 100% (بدون أسعار ثابتة)
+const getRealisticFPLData = (pos: string, goals: number, assists: number, id: number) => {
+  let base = pos === 'FWD' ? 5.5 : pos === 'MID' ? 5.0 : pos === 'DEF' ? 4.5 : 4.0;
+  let bonus = (goals * 0.3) + (assists * 0.15); // زيادة تأثير الأهداف عشان يغلي اللعيبة المتألقة
+  let price = Math.min(base + bonus, 15.0).toFixed(1); // أقصى سعر 15
 
   let pointsMultiplier = pos === 'DEF' || pos === 'GK' ? 6 : pos === 'MID' ? 5 : 4;
   let points = (goals * pointsMultiplier) + (assists * 3) + ((id % 20) * 2);
@@ -58,30 +38,6 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
 
   return { price, points };
 };
-
-// 🛡️ قاعدة بيانات الدوري الإنجليزي الاحتياطية بالمراكز الصحيحة
-const fallbackDb = [
-  { id: 3754, name: 'Mohamed Salah', position: 'Midfield', goals: 20, assists: 10, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 3823, name: 'Erling Haaland', position: 'Offence', goals: 25, assists: 5, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 8004, name: 'Bukayo Saka', position: 'Midfield', goals: 16, assists: 10, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 8011, name: 'Cole Palmer', position: 'Midfield', goals: 22, assists: 11, team: { id: 61, name: 'Chelsea FC', shortName: 'CHE', crest: 'https://crests.football-data.org/61.png' } },
-  { id: 3794, name: 'Son Heung-min', position: 'Midfield', goals: 17, assists: 9, team: { id: 73, name: 'Tottenham', shortName: 'TOT', crest: 'https://crests.football-data.org/73.png' } },
-  { id: 3811, name: 'Ollie Watkins', position: 'Offence', goals: 19, assists: 13, team: { id: 58, name: 'Aston Villa', shortName: 'AVL', crest: 'https://crests.football-data.org/58.png' } },
-  { id: 3824, name: 'Kevin De Bruyne', position: 'Midfield', goals: 4, assists: 10, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 3825, name: 'Phil Foden', position: 'Midfield', goals: 18, assists: 8, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 8005, name: 'Martin Ødegaard', position: 'Midfield', goals: 8, assists: 10, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 3755, name: 'Virgil van Dijk', position: 'Defence', goals: 2, assists: 2, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 3756, name: 'Trent Alexander-Arnold', position: 'Defence', goals: 3, assists: 4, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 8006, name: 'William Saliba', position: 'Defence', goals: 2, assists: 1, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 8007, name: 'Gabriel Magalhães', position: 'Defence', goals: 4, assists: 0, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 3826, name: 'Ederson', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 65, name: 'Manchester City', shortName: 'MCI', crest: 'https://crests.football-data.org/65.png' } },
-  { id: 3757, name: 'Alisson', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 64, name: 'Liverpool FC', shortName: 'LIV', crest: 'https://crests.football-data.org/64.png' } },
-  { id: 8008, name: 'David Raya', position: 'Goalkeeper', goals: 0, assists: 0, team: { id: 57, name: 'Arsenal FC', shortName: 'ARS', crest: 'https://crests.football-data.org/57.png' } },
-  { id: 9001, name: 'Alexander Isak', position: 'Offence', goals: 21, assists: 2, team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' } },
-  { id: 9002, name: 'Anthony Gordon', position: 'Midfield', goals: 11, assists: 10, team: { id: 67, name: 'Newcastle', shortName: 'NEW', crest: 'https://crests.football-data.org/67.png' } },
-  { id: 9003, name: 'Jarrod Bowen', position: 'Midfield', goals: 16, assists: 6, team: { id: 73, name: 'West Ham', shortName: 'WHU', crest: 'https://crests.football-data.org/563.png' } },
-  { id: 9004, name: 'Dominic Solanke', position: 'Offence', goals: 19, assists: 3, team: { id: 1044, name: 'Bournemouth', shortName: 'BOU', crest: 'https://crests.football-data.org/1044.png' } }
-];
 
 const defaultSquadStructure = [
   { role: 'GK', isBench: false, player: null },
@@ -118,8 +74,9 @@ export default function FantasyHub() {
   const [showPredictorModal, setShowPredictorModal] = useState(false);
   const [swapSourceIndex, setSwapSourceIndex] = useState<number | null>(null);
 
+  // 🧹 تحديث إصدار الذاكرة عشان يفرمت أي لعيبة قديمة
   const [squad, setSquad] = useState<any[]>(() => {
-    const saved = localStorage.getItem('kt_squad_v4'); 
+    const saved = localStorage.getItem('kt_squad_v6'); 
     return saved ? JSON.parse(saved) : defaultSquadStructure;
   });
   
@@ -149,7 +106,7 @@ export default function FantasyHub() {
   }, [squad]);
 
   useEffect(() => {
-    localStorage.setItem('kt_squad_v4', JSON.stringify(squad));
+    localStorage.setItem('kt_squad_v6', JSON.stringify(squad));
     localStorage.setItem('kt_captain', JSON.stringify(captainId));
     localStorage.setItem('kt_vice_captain', JSON.stringify(viceCaptainId));
   }, [squad, captainId, viceCaptainId]);
@@ -159,44 +116,45 @@ export default function FantasyHub() {
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
   const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
+  // 🧹 تحديث إصدار داتا اللعيبة
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { 
-    try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } 
+    try { const saved = localStorage.getItem('kt_players_db_v6'); return saved ? JSON.parse(saved) : []; } catch { return []; } 
   });
   const [syncedTeams, setSyncedTeams] = useState<number>(() => { 
-    try { const saved = localStorage.getItem('kt_sync_progress'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } 
+    try { const saved = localStorage.getItem('kt_sync_progress_v6'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; } 
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   useEffect(() => {
     if (leaguePlayers.length > 0) {
-      localStorage.setItem('kt_players_db', JSON.stringify(leaguePlayers));
+      localStorage.setItem('kt_players_db_v6', JSON.stringify(leaguePlayers));
     }
   }, [leaguePlayers]);
 
-  // 🛡️ التحديث الجذري: منع الاستنساخ وتوحيد البيانات + فلتر الدوري الإنجليزي فقط
+  // 🤖 الداتا دلوقتي بتيجي 100% من الـ API صافي
   const allPlayers = useMemo(() => {
     try {
       const uniqueMap = new Map();
-      const seenNames = new Set(); // عشان لو الـ API جاب نفس الاسم بـ ID مختلف نمنعه
+      const seenNames = new Set(); 
 
       const addPlayerToMap = (p: any, form: string, overrideGoals?: number, overrideAssists?: number) => {
         if (!p || !p.id || !p.name) return;
         
-        // 🚨 حماية: نضمن إن اللاعب في الدوري الإنجليزي فقط (نظام الفانتازي)
         const leagueId = p.league || p.competition?.code;
-        // لو الـ API جاب لاعب من دوري تاني متسجلوش
         if (leagueId && leagueId !== 'PL') return;
 
-        const pId = Number(p.id); // تحويل أي ID لرقم عشان الـ String ميبوظش الماب
+        const pId = Number(p.id); 
         const normalizedName = p.name.trim().toLowerCase();
 
-        if (seenNames.has(normalizedName)) return; // فلتر الأسماء المكررة (عشان هالاند ميكررش)
+        if (seenNames.has(normalizedName)) return; 
         seenNames.add(normalizedName);
 
-        const pos = getPlayerPosition(p); // الخوارزمية الصارمة بتحدد المركز
+        const pos = getPlayerPosition(p); 
         const goals = overrideGoals ?? (p.goals || 0);
         const assists = overrideAssists ?? (p.assists || 0);
-        const { price, points } = getRealisticFPLData(p.name, pos, goals, assists, pId);
+        
+        // حساب السعر ديناميكياً بدون داتا ثابتة
+        const { price, points } = getRealisticFPLData(pos, goals, assists, pId);
 
         uniqueMap.set(pId, {
           ...p,
@@ -207,11 +165,11 @@ export default function FantasyHub() {
           price,
           form,
           points,
-          position: pos // (MID, FWD, DEF, GK)
+          position: pos 
         });
       };
 
-      fallbackDb.forEach(p => addPlayerToMap(p, '8.0'));
+      // الداتا بتيجي من مزامنة الفرق والهدافين بس
       leaguePlayers.forEach(p => addPlayerToMap(p, ((p.id % 50) / 10).toFixed(1)));
       (plScorers?.scorers || []).forEach((s: any) => {
         if (s.player) {
@@ -239,13 +197,12 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
-    // فلتر وقت البحث برضه لضمان إن اللعيبة دي PL بس
     const results = allPlayers.filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase()))).slice(0, 30);
     setSearchResults(results);
   };
 
   useEffect(() => {
-    const isRecentlySynced = localStorage.getItem('kt_last_sync') && (Date.now() - parseInt(localStorage.getItem('kt_last_sync')!, 10)) < 12 * 60 * 60 * 1000;
+    const isRecentlySynced = localStorage.getItem('kt_last_sync_v6') && (Date.now() - parseInt(localStorage.getItem('kt_last_sync_v6')!, 10)) < 12 * 60 * 60 * 1000;
     if (teams.length > 0 && !isSyncing && (leaguePlayers.length === 0 || !isRecentlySynced)) {
       const syncLeague = async () => {
         setIsSyncing(true);
@@ -259,7 +216,7 @@ export default function FantasyHub() {
               const teamSquad = data.squad.map((p: any) => ({ ...p, league: 'PL', team: { id: team.id, name: team.name, crest: team.crest, shortName: team.shortName }, goals: 0, price: '5.0', form: '0.0', points: 0, position: getPlayerPosition(p) }));
               setLeaguePlayers(prev => { const unique = new Map(); [...prev, ...teamSquad].forEach(item => unique.set(item.id, item)); return Array.from(unique.values()); });
               setSyncedTeams(i + 1); i++; 
-              localStorage.setItem('kt_sync_progress', (i).toString());
+              localStorage.setItem('kt_sync_progress_v6', (i).toString());
             }
             await new Promise(r => setTimeout(r, 6000));
           } catch (err: any) { 
@@ -268,7 +225,7 @@ export default function FantasyHub() {
           }
         }
         setIsSyncing(false);
-        localStorage.setItem('kt_last_sync', Date.now().toString());
+        localStorage.setItem('kt_last_sync_v6', Date.now().toString());
       };
       syncLeague();
     }
@@ -280,8 +237,8 @@ export default function FantasyHub() {
   }, [search, allPlayers]);
 
   const forceManualSync = () => {
-    localStorage.removeItem('kt_last_sync');
-    localStorage.removeItem('kt_sync_progress');
+    localStorage.removeItem('kt_last_sync_v6');
+    localStorage.removeItem('kt_sync_progress_v6');
     setSyncedTeams(0);
     setIsSyncing(false);
     setLeaguePlayers([]);
@@ -490,11 +447,10 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 🤖 التحديث الجذري: خوارزمية ذكية لاختيار الفريق (تحترم الميزانية وتمنع التكرار تماماً)
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
     if (pool.length < 40) {
-      alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
+      alert("⏳ جاري تحميل اللعيبة من الـ API.. استنى ثواني لحد ما الشريط اللي فوق يخلص!"); return;
     }
 
     const gks = pool.filter(p => p.position === 'GK').sort((a, b) => b.points - a.points);
@@ -524,7 +480,6 @@ export default function FantasyHub() {
       return picked;
     };
 
-    // الترتيب مهم عشان يبدأ بالمهاجمين الغاليين الأول بعدين يكمل بالباقي
     const f = pick(fwds, 3);
     const m = pick(mids, 5);
     const d = pick(defs, 5);
@@ -630,7 +585,6 @@ export default function FantasyHub() {
       {/* 🚀 الملعب والتحليل جنب بعض */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-0">
          
-         {/* 🏟️ الجزء اليمين: الملعب التفاعلي */}
          <div className="lg:col-span-8 w-full flex flex-col items-center bg-[#111113]/50 rounded-[2.5rem] p-4 border border-zinc-800/50 shadow-2xl">
             <SquadBuilder 
               squad={squad} 
@@ -651,7 +605,6 @@ export default function FantasyHub() {
             />
          </div>
 
-         {/* 🤖 الجزء الشمال: المساعد الذكي */}
          <div className="lg:col-span-4 w-full flex flex-col gap-6 sticky top-24">
             <AnimatePresence mode="wait">
                
