@@ -453,6 +453,7 @@ export default function FantasyHub() {
     }, 1500);
   };
 
+  // 🚀 التحديث الجديد: دالة الـ Auto Pick عشان تجيب تشكيلة قوية وعشوائية كل ضغطة
   const handleAutoPick = () => {
     const pool = allPlayers.filter(p => p.league === 'PL');
     const gks = pool.filter(p => p.position === 'GK');
@@ -464,6 +465,7 @@ export default function FantasyHub() {
       alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
     }
     
+    // حساب قوة اللاعب
     const calculatePlayerPower = (p: any) => {
       const goals = p.goals || 0;
       const assists = p.assists || 0;
@@ -472,22 +474,38 @@ export default function FantasyHub() {
       return (goals * 25) + (assists * 15) + points + (price * 5);
     };
 
-    const sorted = [...pool].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
-    
-    const teamCounts: any = {};
-    const pick = (pos: string, count: number) => {
+    // دالة مساعدة بتجيب أفضل اللاعبين وتعملهم (لخبطة) عشان التشكيلة تتغير كل مرة
+    const pickRandomStrong = (playersArray: any[], count: number, teamCounts: any) => {
+      // بنرتب اللاعبين حسب القوة ونجيب أحسن 20 لاعب في المركز
+      const sorted = [...playersArray].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
+      const topPool = sorted.slice(0, 20).sort(() => 0.5 - Math.random()); // اللخبطة العشوائية
+
       const picked = [];
-      for (let p of sorted) {
+      for (let p of topPool) {
         if (picked.length >= count) break;
-        if (p.position !== pos) continue;
-        if ((teamCounts[p.team?.id] || 0) >= 3) continue;
+        if ((teamCounts[p.team?.id] || 0) >= 3) continue; // ممنوع أكتر من 3 من فريق واحد
         picked.push(p);
         teamCounts[p.team?.id] = (teamCounts[p.team?.id] || 0) + 1;
+      }
+
+      // في حالات نادرة لو الـ 20 لاعب مكملوش بسبب شرط الفريق، بنكمل من باقي القائمة
+      if (picked.length < count) {
+          for (let p of sorted) {
+            if (picked.length >= count) break;
+            if (picked.find(x => x.id === p.id)) continue;
+            if ((teamCounts[p.team?.id] || 0) >= 3) continue;
+            picked.push(p);
+            teamCounts[p.team?.id] = (teamCounts[p.team?.id] || 0) + 1;
+          }
       }
       return picked;
     };
     
-    const f = pick('FWD', 3); const m = pick('MID', 5); const d = pick('DEF', 5); const g = pick('GK', 2);
+    const teamCounts: any = {};
+    const f = pickRandomStrong(fwds, 3, teamCounts);
+    const m = pickRandomStrong(mids, 5, teamCounts);
+    const d = pickRandomStrong(defs, 5, teamCounts);
+    const g = pickRandomStrong(gks, 2, teamCounts);
     
     const newSquad = [
       { role: 'GK', isBench: false, player: g[0] || null },
@@ -507,7 +525,13 @@ export default function FantasyHub() {
       { role: 'FWD', isBench: true, player: f[2] || null },
     ];
     setSquad(newSquad); 
-    if (f[0]) setCaptainId(f[0].id);
+
+    // إعطاء شارة الكابتن لأقوى لاعب في التشكيلة الأساسية أوتوماتيكياً
+    const activePitch = newSquad.filter(s => !s.isBench && s.player).map(s => s.player);
+    if (activePitch.length > 0) {
+       const bestPlayer = activePitch.reduce((prev, current) => (calculatePlayerPower(prev) > calculatePlayerPower(current) ? prev : current));
+       setCaptainId(bestPlayer.id);
+    }
   };
 
   const upcomingGameweeks = useMemo(() => {
