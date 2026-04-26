@@ -2,8 +2,7 @@
 
 A comprehensive, real-time Fantasy Premier League (FPL) squad builder and analytics tool. Built to help FPL managers analyze, build, and predict squad performance using live data and AI-driven insights.
 
-🔗 **Live Demo:** [حط لينك Vercel هنا]
-
+🔗 **Live Demo:** [KoraTracker App](https://kora-tracker.vercel.app)
 ## ✨ Key Features
 * **Live API Integration:** Fetches real-time Premier League player data, teams, and upcoming fixtures.
 * **Strict FPL Rules Engine:** Custom algorithm to map real-world tactical positions to exact FPL rules (e.g., Wingers mapped to MID) using exact ID matching.
