@@ -12,8 +12,10 @@ export default function SquadBuilder({
   const downloadImage = async () => {
     if (!squadRef.current) return;
     try {
-      const dataUrl = await toPng(squadRef.current, { quality: 1, pixelRatio: 2, backgroundColor: '#15803d' });
-      const link = document.createElement('a');
+    const dataUrl = await toPng(squadRef.current, { 
+        cacheBust: true,
+        skipFonts: true, // دي بتسرع التحميل وبتقلل المشاكل
+      });
       link.download = 'KoraTracker-DreamTeam.png';
       link.href = dataUrl;
       link.click();
