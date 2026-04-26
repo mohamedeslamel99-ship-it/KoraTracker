@@ -1,20 +1,25 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# KoraTracker - Fantasy Hub ⚽🧠
 
-# Run and deploy your AI Studio app
+A comprehensive, real-time Fantasy Premier League (FPL) squad builder and analytics tool. Built to help FPL managers analyze, build, and predict squad performance using live data and AI-driven insights.
 
-This contains everything you need to run your app locally.
+🔗 **Live Demo:** [حط لينك Vercel هنا]
 
-View your app in AI Studio: https://ai.studio/apps/5fedb215-e35f-4ffc-b2ed-863a2ecf25ab
+## ✨ Key Features
+* **Live API Integration:** Fetches real-time Premier League player data, teams, and upcoming fixtures.
+* **Strict FPL Rules Engine:** Custom algorithm to map real-world tactical positions to exact FPL rules (e.g., Wingers mapped to MID) using exact ID matching.
+* **Dynamic Pricing Engine:** Calculates realistic FPL prices and season points dynamically based on player stats.
+* **AI Squad Coach:** Analyzes the built squad to provide a score (out of 100%), strengths, and weaknesses (e.g., Budget management, attacking threat).
+* **Smart Auto-Pick:** An algorithm that auto-generates a valid 15-player squad strictly adhering to the £100m budget constraint and max 3 players per team rule.
+* **Comparison Labs:** Side-by-side visual comparison of player stats and market values.
 
-## Run Locally
+## 🛠️ Tech Stack
+* **Framework:** React.js 
+* **Styling:** Tailwind CSS & Lucide Icons
+* **Data Fetching:** SWR for smart caching and revalidation
+* **Animations:** Framer Motion
+* **Deployment:** Vercel
 
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🧠 Technical Challenges Solved
+* Implemented a strict ID-based mapping system to overcome third-party API inaccuracies regarding player positions (e.g., mapping Defensive Midfielders to MID instead of DEF).
+* Built a custom dynamic pricing engine since the live football API does not provide FPL market values.
+* Handled API Rate Limiting by implementing synchronized, delayed fetching with fallback local storage mechanisms.
