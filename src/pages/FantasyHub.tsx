@@ -47,7 +47,7 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   return { price, points };
 };
 
-// تم تعديل الترتيب ليطابق ترتيب الفانتازي (هجوم -> وسط -> دفاع -> حارس)
+// ترتيب الملعب زي الفانتازي الأصلية (هجوم -> وسط -> دفاع -> حارس)
 const defaultSquadStructure = [
   { role: 'FWD', isBench: false, player: null },
   { role: 'FWD', isBench: false, player: null },
@@ -179,7 +179,10 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
-    const results = allPlayers.filter(p => p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())).slice(0, 30);
+    // ضمان عرض لاعبي الدوري الإنجليزي فقط
+    const results = allPlayers
+      .filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())))
+      .slice(0, 30);
     setSearchResults(results);
   };
 
@@ -311,7 +314,6 @@ export default function FantasyHub() {
     }
   };
 
-  // 🧠 خوارزمية التقييم الديناميكية الجديدة (Real AI Analysis)
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -321,56 +323,41 @@ export default function FantasyHub() {
     setIsGeneratingAI(true);
 
     setTimeout(() => {
-      // 1. حساب إحصائيات التشكيلة
       const totalGoals = active.reduce((sum, p) => sum + (p.goals || 0), 0);
-      const totalAssists = active.reduce((sum, p) => sum + (p.assists || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
       const totalCost = active.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0) + bench.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0);
       
       const defPoints = active.filter(p => p.position === 'DEF' || p.position === 'GK').reduce((sum, p) => sum + (p.points || 0), 0);
       const attPoints = active.filter(p => p.position === 'FWD' || p.position === 'MID').reduce((sum, p) => sum + (p.points || 0), 0);
 
-      // تحديد أفضل لاعب عشان نقيمه بالكابتن
       const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
       const bestFwd = active.filter(p => p.position === 'FWD').sort((a,b) => (b.goals || 0) - (a.goals || 0))[0];
       const captainPlayer = active.find(p => p.id === captainId);
       const isCaptainBest = captainId === bestPlayer?.id;
 
-      // 2. حساب السكور الحقيقي (متوسط قوي في الفانتازي بيبقى 950-1000 نقطة)
       let baseScore = (totalPoints / 950) * 100;
-
-      // خصم نقط لو عديت الميزانية الـ 100م
       if (totalCost > 100) baseScore -= (totalCost - 100) * 2;
-      if (isCaptainBest) baseScore += 5; // مكافأة
+      if (isCaptainBest) baseScore += 5;
 
       let finalScore = Math.floor(Math.max(30, Math.min(99, baseScore)));
-      finalScore += Math.floor(Math.random() * 5) - 2; // عشوائية خفيفة عشان تحس بالتغيير
+      finalScore += Math.floor(Math.random() * 5) - 2; 
       finalScore = Math.max(30, Math.min(99, finalScore));
 
-      // 3. تحليل نقاط القوة والضعف
       const strengths = [];
       const weaknesses = [];
 
-      // الهجوم
       if (totalGoals > 50) {
-        const phrases = [
-          `هجوم كاسح: لاعبيتك مسجلين ${totalGoals} هدف، هجومك مرعب!`,
-          `ماكينة أهداف: التشكيلة محققة ${totalGoals} جول في الواقع.`,
-          bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`
-        ];
-        strengths.push(phrases[Math.floor(Math.random() * phrases.length)]);
+        strengths.push(bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`);
       } else {
         weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس! محتاج مهاجمين أشرس.`);
       }
 
-      // الدفاع
       if (defPoints > attPoints * 0.6) {
         strengths.push(`دفاعك صلب وبيجمع نقط ممتازة جداً مقارنة بخط الهجوم.`);
       } else if (defPoints < 150) {
         weaknesses.push(`خط الدفاع شوارع وبيخسر نقط كتير، ركز على لعيبة بتجيب Clean Sheets.`);
       }
 
-      // الميزانية
       if (totalCost > 100.5) {
         weaknesses.push(`ميزانيتك تخطت الـ 100 مليون (£${totalCost.toFixed(1)}m)! ده مش قانوني في الفانتازي لازم تبيع حد غالي.`);
       } else if (totalCost < 90) {
@@ -379,7 +366,6 @@ export default function FantasyHub() {
         strengths.push(`إدارة الميزانية ممتازة جداً ومحسوبة بالمللي (£${totalCost.toFixed(1)}m).`);
       }
 
-      // الكابتن
       if (captainPlayer) {
         if (isCaptainBest) {
           strengths.push(`اختيار الكابتن (${captainPlayer.name.split(' ').pop()}) مثالي ومبني على أعلى إحصائيات.`);
@@ -388,18 +374,13 @@ export default function FantasyHub() {
         }
       }
 
-      // الدكة
       if (bench.length < 4) {
         weaknesses.push(`دكة البدلاء بتاعتك مش كاملة، لو لاعب اتصاب أو قعد احتياطي هتلبس في الحيط.`);
-      } else if (bench.some(p => parseFloat(p.price || '0') > 6.5)) {
-        weaknesses.push(`دافع مبالغ ضخمة في لعيبة دكة، بيع حد منهم وهات أسياي قوي.`);
       }
 
-      // لخبطة المصفوفة عشان الجمل تتغير كل مرة
       strengths.sort(() => 0.5 - Math.random());
       weaknesses.sort(() => 0.5 - Math.random());
 
-      // الألوان
       let ratingColor = "text-emerald-400";
       let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
 
@@ -435,13 +416,10 @@ export default function FantasyHub() {
       "الذكاء الاصطناعي بيعيط من ساعة ما شاف اختياراتك.. حرام عليك! 😭",
       "لو جوارديولا شاف التشكيلة دي هيسيب التدريب ويفتح محل كشري 🤦‍♂️",
       "خط النص عندك أبطأ من سلحفاة حامل.. إيه ده! 🐌",
-      "دي تشكيلة تجيب نقط بالماينس مش بالموجب.. امسح الأكونت أحسن! 💀",
       "أنا لو مكان اللعيبة دي هعتزل قبل ما الجولة تبدأ 🚑",
       "دفاعك ده شوارع.. أي حد معدي هيسجل فيك! 🚦",
-      "تشكيلة ممتازة جداً.. ناقصها بس 11 لاعب بيفهموا كورة وتظبط 🤡",
       "إنت حاطط الكابتن ده بناءً على رؤية فنية ولا ضربت الودع؟ 🔮",
       "اللعيبة دي آخرها تلعب حجز خماسي يوم الخميس، مش فانتازي! ⚽",
-      "تشكيلة تبكي الحجر.. ربنا يعينك على نفسك! 💔"
     ];
 
     setTimeout(() => {
@@ -454,37 +432,58 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 🚀 الذكاء الاصطناعي لاختيار اللعيبة (يختار المتألقين الحقيقيين فقط وتتغير عشوائياً)
+  // 🚀 الذكاء الاصطناعي المُحدث لاختيار اللعيبة (حصانة ضد المصابين والاحتياطيين) 🚀
   const handleAutoPick = () => {
-    // تصفية اللعيبة: نختار بس اللعيبة اللي جابت نقط أو أهداف أو أسيستات (عشان نضمن إنهم أساسيين ومتألقين)
-    const pool = allPlayers.filter(p => p.league === 'PL' && (p.points > 10 || p.goals > 0 || p.assists > 0));
     
-    const gks = pool.filter(p => p.position === 'GK');
-    const defs = pool.filter(p => p.position === 'DEF');
-    const mids = pool.filter(p => p.position === 'MID');
-    const fwds = pool.filter(p => p.position === 'FWD');
+    // 🚨 قائمة الـ Blacklist للإصابات الطويلة واللاعبين غير النشطين
+    const unavailablePlayers = ['ødegaard', 'odegaard', 'rodri', 'alisson', 'frimpong', 'bates', 'sánchez'];
+
+    // 1. تصفية صارمة: لازم يكون في الدوري الإنجليزي + مش في الـ Blacklist + مساهماته عالية
+    let pool = allPlayers.filter(p => {
+      const name = (p.name || '').toLowerCase();
+      const isUnavailable = unavailablePlayers.some(un => name.includes(un));
+      const isPL = p.league === 'PL';
+      // شرط إن اللاعب يكون أساسي ومتألق: جاب أكتر من 20 نقطة أو مسجل أهداف/صانع ألعاب
+      const hasGoodStats = p.points >= 20 || p.goals >= 2 || p.assists >= 2;
+
+      return isPL && !isUnavailable && hasGoodStats;
+    });
+
+    let gks = pool.filter(p => p.position === 'GK');
+    let defs = pool.filter(p => p.position === 'DEF');
+    let mids = pool.filter(p => p.position === 'MID');
+    let fwds = pool.filter(p => p.position === 'FWD');
+
+    // لو الـ API لسه محملش الداتا كاملة والفلتر شال لعيبة كتير، بنخفف الشروط بس بنمنع المصابين برضه
+    if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
+       pool = allPlayers.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const isUnavailable = unavailablePlayers.some(un => name.includes(un));
+          return p.league === 'PL' && !isUnavailable;
+       });
+       gks = pool.filter(p => p.position === 'GK');
+       defs = pool.filter(p => p.position === 'DEF');
+       mids = pool.filter(p => p.position === 'MID');
+       fwds = pool.filter(p => p.position === 'FWD');
+    }
 
     if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
-      alert("⏳ جاري تحميل إحصائيات اللاعبين المتألقين.. استنى ثواني واضغط تاني!"); return;
+       alert("⏳ جاري تحميل إحصائيات اللاعبين المتألقين.. اضغط (Force Sync) أولاً!"); return;
     }
     
-    // حساب قوة اللاعب
     const calculatePlayerPower = (p: any) => {
-      const goals = p.goals || 0;
-      const assists = p.assists || 0;
-      const points = p.points || 0;
-      return (goals * 25) + (assists * 15) + points;
+      return (p.goals || 0) * 25 + (p.assists || 0) * 15 + (p.points || 0);
     };
 
-    // دالة مساعدة بتجيب أفضل اللاعبين وتعملهم (لخبطة) عشان التشكيلة تتغير كل مرة تدوس
     const pickRandomStrong = (playersArray: any[], count: number, teamCounts: any) => {
       const sorted = [...playersArray].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
+      // بنختار من أحسن 25 لاعب ونلخبطهم
       const topPool = sorted.slice(0, 25).sort(() => 0.5 - Math.random()); 
 
       const picked = [];
       for (let p of topPool) {
         if (picked.length >= count) break;
-        if ((teamCounts[p.team?.id] || 0) >= 3) continue; // ممنوع أكتر من 3 من فريق واحد
+        if ((teamCounts[p.team?.id] || 0) >= 3) continue; 
         picked.push(p);
         teamCounts[p.team?.id] = (teamCounts[p.team?.id] || 0) + 1;
       }
@@ -507,7 +506,6 @@ export default function FantasyHub() {
     const d = pickRandomStrong(defs, 5, teamCounts);
     const g = pickRandomStrong(gks, 2, teamCounts);
     
-    // ترتيب المصفوفة الجديدة: هجوم -> وسط -> دفاع -> حارس
     const newSquad = [
       { role: 'FWD', isBench: false, player: f[0] || null },
       { role: 'FWD', isBench: false, player: f[1] || null },
@@ -527,7 +525,6 @@ export default function FantasyHub() {
     ];
     setSquad(newSquad); 
 
-    // إعطاء شارة الكابتن لأقوى لاعب في التشكيلة الأساسية أوتوماتيكياً
     const activePitch = newSquad.filter(s => !s.isBench && s.player).map(s => s.player);
     if (activePitch.length > 0) {
        const bestPlayer = activePitch.reduce((prev, current) => (calculatePlayerPower(prev) > calculatePlayerPower(current) ? prev : current));
@@ -572,8 +569,6 @@ export default function FantasyHub() {
 
       {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
-        
-        {/* 🔄 زرار المزامنة الإجباري هيظهر دايماً طول ما مفيش عملية مزامنة شغالة */}
         {!isSyncing && (
            <div className="mb-4 flex justify-center">
              <button onClick={forceManualSync} className="flex items-center gap-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg">
