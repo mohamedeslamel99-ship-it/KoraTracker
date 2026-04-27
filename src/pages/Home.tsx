@@ -1,16 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
 import MatchCard from '../components/MatchCard';
-import { Trophy, Calendar, Loader2, AlertCircle, ArrowRight, BrainCircuit, LineChart, ShieldHalf, Flame, Swords, Plus, TrendingUp, X, Activity, MapPin, Clock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Trophy, Calendar, Loader2, ArrowRight, BrainCircuit, Flame, Swords, Plus, TrendingUp, X, Activity, MapPin, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Home() {
-  const navigate = useNavigate();
+  // حالة الإشعار المنبثق (Toast)
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const { data: liveData, error: liveError, isLoading: liveLoading } = useSWR(endpoints.getLiveMatches(), fetchFootballData, { refreshInterval: 60000 });
+  // 🔄 تفعيل التحديث التلقائي (Polling) كل 15 ثانية للنتائج المباشرة
+  const { data: liveData, error: liveError, isLoading: liveLoading } = useSWR(endpoints.getLiveMatches(), fetchFootballData, { refreshInterval: 15000 });
   const { data: fixturesData, error: fixturesError, isLoading: fixturesLoading } = useSWR(endpoints.getMatches(), fetchFootballData);
   const { data: plScorers, isLoading: scorersLoading } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
 
@@ -37,6 +39,7 @@ export default function Home() {
   const debatePlayer2 = topPlayers[1];
   const trendingPlayers = topPlayers.slice(2, 6);
 
+  // 🚀 إضافة سريعة بدون تحويل (Toast Notification)
   const handleQuickAdd = (player: any) => {
     const currentSquad = JSON.parse(localStorage.getItem('kt_saved_squad') || JSON.stringify(Array(15).fill(null)));
     let targetRange: number[] = [];
@@ -54,15 +57,39 @@ export default function Home() {
     if (targetIndex !== undefined) {
       currentSquad[targetIndex] = player;
       localStorage.setItem('kt_saved_squad', JSON.stringify(currentSquad));
-      navigate('/fantasy-hub');
+      // عرض الإشعار بدل التحويل
+      setToastMessage(`✅ ${player.name.split(' ').pop()} Added to Squad!`);
     } else {
-      alert("تشكيلتك مليانة! روح امسح حد الأول.");
-      navigate('/fantasy-hub');
+      setToastMessage(`❌ Squad is full! Free up a slot.`);
     }
   };
 
+  // إخفاء الإشعار بعد 3 ثواني
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
   return (
-    <div className="space-y-8 md:space-y-12 pb-20 overflow-x-hidden">
+    <div className="space-y-8 md:space-y-12 pb-20 overflow-x-hidden relative">
+      
+      {/* 🟢 الإشعار المنبثق (Toast) 🟢 */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, x: '-50%' }} 
+            animate={{ opacity: 1, y: 0, x: '-50%' }} 
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className="fixed bottom-10 left-1/2 z-[300] bg-zinc-900 border border-emerald-500/50 shadow-2xl rounded-2xl px-6 py-3 flex items-center gap-3 min-w-[280px]"
+          >
+            {toastMessage.includes('✅') ? <CheckCircle2 className="text-emerald-500 shrink-0" size={18} /> : <X className="text-red-500 shrink-0" size={18} />}
+            <span className="text-white text-[10px] md:text-xs font-black uppercase tracking-widest">{toastMessage.replace(/✅|❌/, '').trim()}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {isRateLimited && (
         <div className="sticky top-20 z-30 mx-auto max-w-lg px-4">
           <div className="flex items-center gap-3 rounded-2xl border border-indigo-500/30 bg-[#09090b]/80 p-4 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-4">
@@ -72,27 +99,26 @@ export default function Home() {
         </div>
       )}
 
-      {/* 🔴 Roast Ticker - تم الإصلاح للموبايل 🔴 */}
+      {/* 🔴 Marquee (شريط الأخبار الجذاب للاعبي الفانتازي) 🔴 */}
       <div className="w-full bg-red-950/20 border-y border-red-500/20 py-2.5 relative z-0 flex overflow-hidden mt-2 md:mt-4">
         <motion.div
           className="flex whitespace-nowrap w-max"
           animate={{ x: ["0%", "-50%"] }}
           transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
         >
-          {/* تكرار الجمل مرتين عشان التمرير ميفصلش */}
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex whitespace-nowrap gap-8 md:gap-12 items-center px-4 md:px-6">
-               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> AI: هل دكة البدلاء بتاعتك بتنافس على الدوري؟</span>
-               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> AI: تشكيلة عظيمة، بس ياريت متلعبش بيها!</span>
-               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> AI: سايب فلوس في البنك ليه؟ خايف من التضخم؟</span>
-               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> AI: كابتنة أسطورية.. لو بتنافس على المركز الأخير.</span>
-               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-white uppercase tracking-widest">🔥 DARE TO ROAST YOUR SQUAD? GO TO FANTASY HUB! 🔥</span>
+               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> 🚨 عاجل: شكوك حول إصابة هالاند قبل الجولة القادمة!</span>
+               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> 📈 أكثر اللاعبين شراءً: بوكايو ساكا (Arsenal)</span>
+               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> 📉 انخفاض سعر: دي بروين (-£0.1m)</span>
+               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-red-500 uppercase tracking-widest"><Flame size={12} className="animate-pulse"/> 🎯 الكابتن المفضل هذا الأسبوع: محمد صلاح ضد الفرق الصاعدة.</span>
+               <span className="flex items-center gap-2 text-[9px] md:text-xs font-black text-white uppercase tracking-widest">⚡ BEAT THE DEADLINE. LAUNCH FANTASY HUB NOW! ⚡</span>
             </div>
           ))}
         </motion.div>
       </div>
 
-      {/* 🌟 Hero Section - متجاوب مع الموبايل 🌟 */}
+      {/* 🌟 Hero Section - تسلسل بصري وزرار واحد أساسي 🌟 */}
       <section className="relative overflow-hidden bg-[#111113] py-10 md:py-20 text-white rounded-[2rem] md:rounded-[40px] border border-zinc-800 shadow-2xl flex flex-col items-center text-center mx-4 sm:mx-6">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
         
@@ -101,14 +127,19 @@ export default function Home() {
             <BrainCircuit size={12} className="md:w-3.5 md:h-3.5" /> Powered by AI
           </div>
           
-          <h1 className="text-[2.5rem] leading-[0.9] sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter mb-6">
+          <h1 className="text-[2.5rem] leading-[0.9] sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter mb-4">
             Master Your <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Fantasy Squad</span>
           </h1>
+          
+          {/* Subtitle الجديد لفهم الفائدة من أول نظرة */}
+          <p className="text-zinc-400 text-[9px] sm:text-xs md:text-sm font-bold uppercase tracking-widest max-w-xl mb-6 md:mb-8 px-4 leading-relaxed">
+            حلل تشكيلتك بالذكاء الاصطناعي، راقب تغيرات الأسعار لحظة بلحظة، وتفوق في دوري الفانتازي الخاص بك.
+          </p>
 
-          {/* Captaincy Debate Card - مُصغر للموبايل */}
+          {/* Captaincy Debate Card */}
           {debatePlayer1 && debatePlayer2 && (
-            <div className="bg-black/40 border border-zinc-800/80 p-4 md:p-6 rounded-[2rem] backdrop-blur-md w-full max-w-[95%] md:max-w-2xl mx-auto my-6 md:my-10 relative overflow-hidden">
+            <div className="bg-black/40 border border-zinc-800/80 p-4 md:p-6 rounded-[2rem] backdrop-blur-md w-full max-w-[95%] md:max-w-2xl mx-auto my-4 md:my-8 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-indigo-500 to-emerald-500" />
               
               <h3 className="text-[9px] md:text-xs font-black text-zinc-400 uppercase tracking-[0.2em] md:tracking-[0.3em] mb-4 md:mb-6 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 text-center">
@@ -116,7 +147,7 @@ export default function Home() {
                 <span className="text-indigo-400">(LIVE API DATA)</span>
               </h3>
               
-              <div className="flex items-center justify-center gap-2 md:gap-4 w-full">
+              <div className="flex items-center justify-center gap-2 md:gap-4 w-full mb-2">
                 {/* Player 1 */}
                 <div className="flex-1 flex flex-col items-center min-w-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 bg-zinc-900 border border-zinc-700 rounded-full p-2 md:p-3 mb-2 md:mb-3 shadow-xl relative">
@@ -141,34 +172,42 @@ export default function Home() {
                   <p className="text-emerald-400 font-black text-sm md:text-xl mt-0.5 md:mt-0">{debatePlayer2.goals} <span className="text-[7px] md:text-[10px] text-zinc-500 uppercase">Goals</span></p>
                 </div>
               </div>
-
-              <Link to="/fantasy-hub" className="mt-5 md:mt-8 inline-flex items-center justify-center w-full bg-zinc-800 hover:bg-indigo-600 text-white font-black px-4 py-3 md:px-6 md:py-3 rounded-xl transition-colors uppercase tracking-[0.15em] md:tracking-widest text-[8px] sm:text-[9px] md:text-xs">
-                See AI Verdict & Compare <ArrowRight size={12} className="ml-1.5 md:ml-2" />
-              </Link>
             </div>
           )}
 
-          <div className="flex justify-center w-full mt-2">
-            <Link to="/fantasy-hub" className="inline-flex items-center justify-center gap-2 md:gap-3 bg-white text-black font-black px-6 md:px-8 py-3 md:py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.15)] uppercase tracking-widest text-[9px] md:text-[11px] w-[90%] sm:w-auto">
+          {/* زراير הـ Call to Action بتسلسل هرمي بصري */}
+          <div className="flex flex-col items-center w-full gap-4 mt-2">
+            {/* Primary Button */}
+            <Link to="/fantasy-hub" className="inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-indigo-600 to-emerald-600 text-white font-black px-8 md:px-12 py-3.5 md:py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_30px_rgba(79,70,229,0.4)] uppercase tracking-[0.2em] text-[9px] md:text-[12px] w-[90%] sm:w-auto">
               Launch Fantasy Hub <ArrowRight size={14} className="md:w-4 md:h-4" />
+            </Link>
+            
+            {/* Secondary Button */}
+            <Link to="/fantasy-hub" className="inline-flex items-center justify-center w-[90%] sm:w-auto text-zinc-400 hover:text-white font-black transition-colors uppercase tracking-[0.15em] text-[8px] sm:text-[9px] md:text-[10px] border border-transparent hover:border-zinc-700 px-6 py-2.5 rounded-full">
+              See AI Verdict & Compare Features
             </Link>
           </div>
         </motion.div>
       </section>
 
       {/* Trending Market */}
-      {trendingPlayers.length > 0 && (
-        <section className="mx-4 sm:mx-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5 md:mb-6 pl-1 md:pl-2">
-            <div className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="text-base md:text-xl font-black tracking-tight text-white uppercase italic">Trending Market</h2>
-            </div>
-            <p className="text-[9px] md:text-[10px] text-zinc-500 font-black uppercase tracking-widest leading-none sm:border-l sm:border-zinc-700 sm:pl-3">Top API Scorers</p>
+      <section className="mx-4 sm:mx-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5 md:mb-6 pl-1 md:pl-2">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h2 className="text-base md:text-xl font-black tracking-tight text-white uppercase italic">Trending Market</h2>
           </div>
-          
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {trendingPlayers.map((p: any) => (
+          <p className="text-[9px] md:text-[10px] text-zinc-500 font-black uppercase tracking-widest leading-none sm:border-l sm:border-zinc-700 sm:pl-3">Top API Scorers</p>
+        </div>
+        
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          {scorersLoading ? (
+             /* Skeleton Loaders للـ Trending Players */
+             Array.from({ length: 4 }).map((_, i) => (
+               <div key={i} className="h-32 md:h-40 rounded-2xl bg-zinc-900/50 border border-zinc-800 animate-pulse" />
+             ))
+          ) : (
+            trendingPlayers.map((p: any) => (
               <div key={p.id} className="bg-[#111113] border border-zinc-800 rounded-2xl p-3 md:p-5 hover:border-emerald-500/50 transition-colors group relative overflow-hidden flex flex-col justify-between h-full">
                 <div className="absolute top-0 right-0 p-2 md:p-3 opacity-5 pointer-events-none"><TrendingUp size={30} className="md:w-10 md:h-10" /></div>
                 <div className="flex items-center gap-2 md:gap-3 mb-3">
@@ -182,10 +221,10 @@ export default function Home() {
                   <Plus size={10} className="md:w-3 md:h-3" /> Quick Add
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            ))
+          )}
+        </div>
+      </section>
 
       {/* Live Matches Section */}
       <section className="mx-4 sm:mx-6">
@@ -205,8 +244,11 @@ export default function Home() {
         </div>
 
         {liveLoading ? (
-          <div className="flex h-32 md:h-40 items-center justify-center rounded-2xl border-2 border-dashed border-zinc-800">
-            <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin text-indigo-500" />
+          /* 🦴 Skeleton Loader للنتائج المباشرة 🦴 */
+          <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+             {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-[140px] md:h-[180px] w-full animate-pulse rounded-3xl bg-zinc-900/50 border border-zinc-800" />
+             ))}
           </div>
         ) : liveMatches.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -250,8 +292,9 @@ export default function Home() {
 
           <div className="space-y-3 md:space-y-4">
             {fixturesLoading ? (
+              /* 🦴 Skeleton Loaders للمباريات القادمة 🦴 */
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-12 md:h-16 w-full animate-pulse rounded-xl bg-zinc-900 border border-zinc-800" />
+                <div key={i} className="h-12 md:h-16 w-full animate-pulse rounded-xl bg-zinc-900/50 border border-zinc-800" />
               ))
             ) : upcomingMatches.length > 0 ? (
               upcomingMatches.map((match: any) => (
