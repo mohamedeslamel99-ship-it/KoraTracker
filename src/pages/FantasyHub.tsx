@@ -572,8 +572,8 @@ export default function FantasyHub() {
       {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         
-        {/* 🔄 زرار المزامنة الإجباري في حالة إن الداتا وقفت */}
-        {!isSyncing && leaguePlayers.length === 0 && (
+        {/* 🔄 زرار المزامنة الإجباري هيظهر دايماً طول ما مفيش عملية مزامنة شغالة */}
+        {!isSyncing && (
            <div className="mb-4 flex justify-center">
              <button onClick={forceManualSync} className="flex items-center gap-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-lg">
                <RefreshCw size={14} /> Force Sync Players
