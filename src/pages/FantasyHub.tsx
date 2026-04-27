@@ -47,18 +47,19 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   return { price, points };
 };
 
+// تم تعديل الترتيب ليطابق ترتيب الفانتازي (هجوم -> وسط -> دفاع -> حارس)
 const defaultSquadStructure = [
+  { role: 'FWD', isBench: false, player: null },
+  { role: 'FWD', isBench: false, player: null },
+  { role: 'MID', isBench: false, player: null },
+  { role: 'MID', isBench: false, player: null },
+  { role: 'MID', isBench: false, player: null },
+  { role: 'MID', isBench: false, player: null },
+  { role: 'DEF', isBench: false, player: null },
+  { role: 'DEF', isBench: false, player: null },
+  { role: 'DEF', isBench: false, player: null },
+  { role: 'DEF', isBench: false, player: null },
   { role: 'GK', isBench: false, player: null },
-  { role: 'DEF', isBench: false, player: null },
-  { role: 'DEF', isBench: false, player: null },
-  { role: 'DEF', isBench: false, player: null },
-  { role: 'DEF', isBench: false, player: null },
-  { role: 'MID', isBench: false, player: null },
-  { role: 'MID', isBench: false, player: null },
-  { role: 'MID', isBench: false, player: null },
-  { role: 'MID', isBench: false, player: null },
-  { role: 'FWD', isBench: false, player: null },
-  { role: 'FWD', isBench: false, player: null },
   { role: 'GK', isBench: true, player: null },
   { role: 'DEF', isBench: true, player: null },
   { role: 'MID', isBench: true, player: null },
@@ -453,32 +454,32 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 🚀 التحديث الجديد: دالة الـ Auto Pick عشان تجيب تشكيلة قوية وعشوائية كل ضغطة
+  // 🚀 الذكاء الاصطناعي لاختيار اللعيبة (يختار المتألقين الحقيقيين فقط وتتغير عشوائياً)
   const handleAutoPick = () => {
-    const pool = allPlayers.filter(p => p.league === 'PL');
+    // تصفية اللعيبة: نختار بس اللعيبة اللي جابت نقط أو أهداف أو أسيستات (عشان نضمن إنهم أساسيين ومتألقين)
+    const pool = allPlayers.filter(p => p.league === 'PL' && (p.points > 10 || p.goals > 0 || p.assists > 0));
+    
     const gks = pool.filter(p => p.position === 'GK');
     const defs = pool.filter(p => p.position === 'DEF');
     const mids = pool.filter(p => p.position === 'MID');
     const fwds = pool.filter(p => p.position === 'FWD');
 
     if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
-      alert("⏳ جاري تحميل باقي اللاعبين من الـ API.. استنى ثواني!"); return;
+      alert("⏳ جاري تحميل إحصائيات اللاعبين المتألقين.. استنى ثواني واضغط تاني!"); return;
     }
     
     // حساب قوة اللاعب
     const calculatePlayerPower = (p: any) => {
       const goals = p.goals || 0;
       const assists = p.assists || 0;
-      const price = parseFloat(p.price || 0);
       const points = p.points || 0;
-      return (goals * 25) + (assists * 15) + points + (price * 5);
+      return (goals * 25) + (assists * 15) + points;
     };
 
-    // دالة مساعدة بتجيب أفضل اللاعبين وتعملهم (لخبطة) عشان التشكيلة تتغير كل مرة
+    // دالة مساعدة بتجيب أفضل اللاعبين وتعملهم (لخبطة) عشان التشكيلة تتغير كل مرة تدوس
     const pickRandomStrong = (playersArray: any[], count: number, teamCounts: any) => {
-      // بنرتب اللاعبين حسب القوة ونجيب أحسن 20 لاعب في المركز
       const sorted = [...playersArray].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
-      const topPool = sorted.slice(0, 20).sort(() => 0.5 - Math.random()); // اللخبطة العشوائية
+      const topPool = sorted.slice(0, 25).sort(() => 0.5 - Math.random()); 
 
       const picked = [];
       for (let p of topPool) {
@@ -488,7 +489,6 @@ export default function FantasyHub() {
         teamCounts[p.team?.id] = (teamCounts[p.team?.id] || 0) + 1;
       }
 
-      // في حالات نادرة لو الـ 20 لاعب مكملوش بسبب شرط الفريق، بنكمل من باقي القائمة
       if (picked.length < count) {
           for (let p of sorted) {
             if (picked.length >= count) break;
@@ -507,18 +507,19 @@ export default function FantasyHub() {
     const d = pickRandomStrong(defs, 5, teamCounts);
     const g = pickRandomStrong(gks, 2, teamCounts);
     
+    // ترتيب المصفوفة الجديدة: هجوم -> وسط -> دفاع -> حارس
     const newSquad = [
-      { role: 'GK', isBench: false, player: g[0] || null },
-      { role: 'DEF', isBench: false, player: d[0] || null },
-      { role: 'DEF', isBench: false, player: d[1] || null },
-      { role: 'DEF', isBench: false, player: d[2] || null },
-      { role: 'DEF', isBench: false, player: d[3] || null },
+      { role: 'FWD', isBench: false, player: f[0] || null },
+      { role: 'FWD', isBench: false, player: f[1] || null },
       { role: 'MID', isBench: false, player: m[0] || null },
       { role: 'MID', isBench: false, player: m[1] || null },
       { role: 'MID', isBench: false, player: m[2] || null },
       { role: 'MID', isBench: false, player: m[3] || null },
-      { role: 'FWD', isBench: false, player: f[0] || null },
-      { role: 'FWD', isBench: false, player: f[1] || null },
+      { role: 'DEF', isBench: false, player: d[0] || null },
+      { role: 'DEF', isBench: false, player: d[1] || null },
+      { role: 'DEF', isBench: false, player: d[2] || null },
+      { role: 'DEF', isBench: false, player: d[3] || null },
+      { role: 'GK', isBench: false, player: g[0] || null },
       { role: 'GK', isBench: true, player: g[1] || null },
       { role: 'DEF', isBench: true, player: d[4] || null },
       { role: 'MID', isBench: true, player: m[4] || null },
