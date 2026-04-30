@@ -532,6 +532,7 @@ export default function FantasyHub() {
     }
   };
 
+  // 🚀 خوارزمية جلب الجولات الذكية (متجاهلة للمباريات المؤجلة القديمة) 🚀
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     
@@ -542,15 +543,29 @@ export default function FantasyHub() {
       return acc; 
     }, {});
 
-    let currentMatchday = 1;
     const matchdays = Object.keys(grouped).map(Number).sort((a,b)=>a-b);
-    for (const md of matchdays) {
-      const matches = grouped[md];
-      const hasPendingOrLive = matches.some((m:any) => ['SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED'].includes(m.status));
-      if (hasPendingOrLive) {
-        currentMatchday = md;
-        break;
+    if (matchdays.length === 0) return [];
+
+    let currentMatchday = fixturesData?.competition?.currentMatchday;
+
+    if (!currentMatchday) {
+      currentMatchday = matchdays[matchdays.length - 1];
+      for (const md of matchdays) {
+        const matches = grouped[md];
+        const unfinished = matches.filter((m: any) => !['FINISHED', 'AWARDED'].includes(m.status));
+        
+        if (unfinished.length >= 2) {
+          currentMatchday = md;
+          break;
+        }
       }
+    }
+
+    const lastGwMatches = grouped[matchdays[matchdays.length - 1]];
+    const isSeasonEnded = lastGwMatches && lastGwMatches.every((m: any) => ['FINISHED', 'AWARDED'].includes(m.status));
+    
+    if (isSeasonEnded && currentMatchday === matchdays[matchdays.length - 1]) {
+        currentMatchday = Math.max(1, matchdays[matchdays.length - 3] || 1);
     }
 
     return matchdays
