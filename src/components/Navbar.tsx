@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Home, BarChart3, Users, Menu, X } from 'lucide-react';
+import { Trophy, Home, BarChart3, Users, Menu, X, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '../lib/utils';
 
@@ -9,12 +9,18 @@ const navItems = [
   { name: 'Fantasy Hub', path: '/fantasy-hub', icon: Users },
 ];
 
-export default function Navbar() {
+// هنا بنعرف الـ Props اللي جاية من ملف App.tsx
+interface NavbarProps {
+  theme: string;
+  toggleTheme: () => void;
+}
+
+export default function Navbar({ theme, toggleTheme }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-[#111113]/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-zinc-800 bg-white/80 dark:bg-[#111113]/80 backdrop-blur-md transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
@@ -22,49 +28,63 @@ export default function Navbar() {
               <div className="rounded-lg bg-indigo-600 p-1.5 shadow-sm shadow-indigo-900/20">
                 <Trophy className="h-6 w-6 text-white" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">
+              <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white transition-colors">
                 Kora<span className="text-indigo-500">Tracker</span>
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="flex items-center space-x-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                    location.pathname === item.path
-                      ? "text-white bg-zinc-800"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4", location.pathname === item.path ? "text-indigo-400" : "")} />
-                  {item.name}
-                </Link>
-              ))}
+          {/* تجميعة زراير اليمين (اللينكات + زرار المود + القائمة للموبايل) */}
+          <div className="flex items-center gap-2 md:gap-4">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:block">
+              <div className="flex items-center space-x-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                      location.pathname === item.path
+                        ? "text-slate-900 bg-slate-100 dark:text-white dark:bg-zinc-800"
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800/50"
+                    )}
+                  >
+                    <item.icon className={cn("h-4 w-4", location.pathname === item.path ? "text-indigo-600 dark:text-indigo-400" : "")} />
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden">
+            {/* زرار تبديل المود (Dark/Light) */}
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 focus:outline-none"
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors"
+              aria-label="Toggle theme"
             >
-              <span className="sr-only">Open main menu</span>
-              {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+
+            {/* Mobile menu button */}
+            <div className="flex md:hidden">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 focus:outline-none transition-colors"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+              </button>
+            </div>
+            
           </div>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="md:hidden border-t border-zinc-800 bg-[#111113]">
+        <div className="md:hidden border-t border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#111113] transition-colors duration-300">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navItems.map((item) => (
               <Link
@@ -72,13 +92,13 @@ export default function Navbar() {
                 to={item.path}
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium",
+                  "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors",
                   location.pathname === item.path
-                    ? "text-white bg-zinc-800"
-                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    ? "text-slate-900 bg-slate-100 dark:text-white dark:bg-zinc-800"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", location.pathname === item.path ? "text-indigo-400" : "")} />
+                <item.icon className={cn("h-5 w-5", location.pathname === item.path ? "text-indigo-600 dark:text-indigo-400" : "")} />
                 {item.name}
               </Link>
             ))}
