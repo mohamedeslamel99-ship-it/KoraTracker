@@ -1,17 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-@import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  
-  --color-brand: #6366f1;
-  --color-bg-main: #09090b;
-  --color-bg-card: #18181b;
-  --color-bg-sidebar: #111113;
-  --color-border-subtle: #27272a;
-  --color-text-dim: #a1a1aa;
+/* دي التحديثات بتاعت النسخة التالتة بدل @import "tailwindcss" */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --animate-shimmer: shimmer 2s infinite linear;
+@layer base {
+  /* نقلنا المتغيرات لـ :root عشان تشتغل صح في v3 */
+  :root {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --color-brand: #6366f1;
+    --color-bg-main: #09090b;
+    --color-bg-card: #18181b;
+    --color-bg-sidebar: #111113;
+    --color-border-subtle: #27272a;
+    --color-text-dim: #a1a1aa;
+  }
 
   @keyframes shimmer {
     from {
@@ -21,12 +25,11 @@
       background-position: 200% 0;
     }
   }
-}
 
-@layer base {
   body {
-    background-color: var(--color-bg-main);
-    color: #fafafa;
+    /* ربطنا الـ body بالدارك مود الجديد */
+    @apply bg-slate-50 text-slate-900 dark:bg-[#09090b] dark:text-[#fafafa];
+    font-family: var(--font-sans);
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -36,17 +39,13 @@
 
 @layer components {
   .stat-card {
-    background-color: var(--color-bg-card);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: 12px;
+    /* خلينا الكروت تنور في الفاتح وتغمق في الدارك */
+    @apply bg-white dark:bg-[#18181b] border border-slate-200 dark:border-[#27272a] rounded-xl;
   }
   
   .pill {
-    padding: 4px 10px;
-    border-radius: 99px;
-    font-size: 11px;
-    font-weight: 600;
-    background-color: var(--color-border-subtle);
+    /* ظبطنا الـ pill عشان تمشي مع المودين */
+    @apply px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-200 dark:bg-[#27272a] text-slate-800 dark:text-zinc-50;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -57,10 +56,9 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #27272a;
-    border-radius: 10px;
+    @apply bg-slate-300 dark:bg-[#27272a] rounded-full;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
+    @apply bg-slate-400 dark:bg-[#3f3f46];
   }
 }
