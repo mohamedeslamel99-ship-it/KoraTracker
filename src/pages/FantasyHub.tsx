@@ -6,7 +6,6 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 import Skeleton from '../components/Skeleton';
-// 👈 استدعاء مساحة الإعلانات
 import AdBanner from '../components/AdBanner';
 
 const getPlayerPosition = (p: any) => {
@@ -409,7 +408,6 @@ export default function FantasyHub() {
     
     setIsRoasting(true);
 
-    // 🚨 حط جمل قصف الجبهة القديمة بتاعتك هنا 🚨
     const roasts = [
       "جملة 1",
       "جملة 2",
@@ -568,7 +566,6 @@ export default function FantasyHub() {
         <p className="mt-4 text-zinc-500 font-black uppercase tracking-[0.2em] text-[9px]">Global Player Intelligence</p>
       </header>
 
-      {/* 1. قسم البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         {!isSyncing && (
            <div className="mb-4 flex justify-center">
@@ -607,7 +604,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* 2. 👈 تم نقل قسم المواهب هنا مباشرة بعد البحث */}
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8 z-30">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
@@ -639,7 +635,6 @@ export default function FantasyHub() {
          </div>
       </section>
 
-      {/* 3. قسم المقارنة والبيانات */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
         <div className="lg:col-span-4">
           <AnimatePresence mode="wait">
@@ -711,7 +706,6 @@ export default function FantasyHub() {
           )}
       </section>
 
-      {/* مساحة الإعلان اللي ضفناها */}
       <AdBanner />
 
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
@@ -766,30 +760,57 @@ export default function FantasyHub() {
          )}
       </section>
 
+      {/* 👈 ده شريط المقارنة المتظبط للموبايل */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
-          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-2xl px-4 py-3 md:px-6 md:py-4 rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white"><Scale size={18} /></div>
-                <div>
-                  <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Comparison Tray</h4>
-                  <p className="text-[9px] font-black text-zinc-500 uppercase">{selectedPlayers.length} / 2 Selected</p>
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            exit={{ y: 100, opacity: 0 }} 
+            className="fixed bottom-4 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[95%] max-w-2xl z-[60] px-4 py-3 md:py-4 rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10"
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+              
+              <div className="flex items-center justify-between w-full sm:w-auto">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                    <Scale size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Compare</h4>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase">{selectedPlayers.length} / 2 Selected</p>
+                  </div>
+                </div>
+                <button onClick={clearComparison} className="p-2 sm:hidden rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white shrink-0">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                <div className="flex gap-2 overflow-hidden w-full">
+                  {selectedPlayers.map(p => (
+                    <div key={p.id} className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-1.5 sm:gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <img src={p.team?.crest} className="h-4 w-4 shrink-0 object-contain" />
+                        <span className="text-[9px] sm:text-[10px] font-black text-zinc-300 uppercase truncate">{p.name.split(' ').pop()}</span>
+                      </div>
+                      <button onClick={() => removePlayerFromComparison(p.id)} className="text-zinc-600 hover:text-red-500 shrink-0">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={clearComparison} className="hidden sm:flex p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white shrink-0">
+                    <Trash2 size={16} />
+                  </button>
+                  <button disabled={selectedPlayers.length < 2} onClick={() => setIsComparisonOpen(true)} className={cn("px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shrink-0", selectedPlayers.length === 2 ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-zinc-800 text-zinc-600 cursor-not-allowed")}>
+                    VS
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                {selectedPlayers.map(p => (
-                  <div key={p.id} className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-2">
-                    <img src={p.team?.crest} className="h-4 w-4 object-contain" />
-                    <span className="text-[10px] font-black text-zinc-300 uppercase">{p.name.split(' ').pop()}</span>
-                    <button onClick={() => removePlayerFromComparison(p.id)} className="text-zinc-600 hover:text-red-500"><X size={12} /></button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button onClick={clearComparison} className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white"><Trash2 size={16} /></button>
-                <button disabled={selectedPlayers.length < 2} onClick={() => setIsComparisonOpen(true)} className={cn("flex-1 px-6 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all", selectedPlayers.length === 2 ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-zinc-800 text-zinc-600 cursor-not-allowed")}>Compare</button>
-              </div>
+
             </div>
           </motion.div>
         )}
