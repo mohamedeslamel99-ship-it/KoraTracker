@@ -402,24 +402,74 @@ export default function FantasyHub() {
     }, 1500);
   };
 
+  // 👈 هنا الدالة الجديدة بالكامل بتجيب الداتا الحقيقية
   const generateRoastReport = () => {
-    const active = squad.filter(s => !s.isBench && s.player);
-    if (active.length < 1) { alert("حدد تشكيلتك أولاً"); return; }
+    const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
+    const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
+
+    if (active.length < 5) { 
+      alert("حط 5 لعيبة على الأقل في الملعب عشان أعرف أقصف جبهتك! 😂"); 
+      return; 
+    }
     
     setIsRoasting(true);
 
-    const roasts = [
-      "جملة 1",
-      "جملة 2",
-      "جملة 3"
-    ];
-
     setTimeout(() => {
-      const r1 = roasts[Math.floor(Math.random() * roasts.length)];
-      let r2 = roasts[Math.floor(Math.random() * roasts.length)];
-      while(r1 === r2) { r2 = roasts[Math.floor(Math.random() * roasts.length)]; }
+      const roasts: string[] = [];
+      const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
+      const captain = active.find(p => p.id === captainId);
+      
+      const sortedByPoints = [...active].sort((a, b) => (b.points || 0) - (a.points || 0));
+      const bestPlayer = sortedByPoints[0];
+      const worstPlayer = sortedByPoints[sortedByPoints.length - 1];
 
-      setRoastReport([r1, r2]);
+      if (captain) {
+        const capName = captain.name.split(' ').pop();
+        if (bestPlayer && captain.id !== bestPlayer.id && (bestPlayer.points || 0) > (captain.points || 0) + 15) {
+          roasts.push(`سايب ${bestPlayer.name.split(' ').pop()} المتألق ومكبتن ${capName}؟ إنت بتعاند نفسك يا كوتش! 🤦‍♂️`);
+        } else if ((captain.goals || 0) === 0 && (captain.assists || 0) === 0) {
+          roasts.push(`إنت متأكد إن ${capName} بيلعب كورة؟ ده مكبتنه وهو معملش أسيست حتى بالصدفة! 🤡`);
+        } else {
+          roasts.push(`اختيار ${capName} كابتن؟ واضح إنك بتضرب الودع قبل الجولة ما تبدأ! 🔮`);
+        }
+      } else {
+        roasts.push("إنت ناسي تختار كابتن أصلاً! التشكيلة دي بتلعب على باب الله؟ 🏃‍♂️💨");
+      }
+
+      if (worstPlayer && (worstPlayer.points || 0) <= 15) {
+        roasts.push(`إيه اللي مخليك مقتنع بـ ${worstPlayer.name.split(' ').pop()} أساسي؟ ده لو بيلعب لوحده مش هيجيب نقط! 😂`);
+      }
+
+      const expensiveFlop = active.find(p => parseFloat(p.price || '0') >= 8.0 && (p.goals || 0) === 0 && (p.assists || 0) === 0);
+      if (expensiveFlop) {
+        roasts.push(`دافع £${expensiveFlop.price}m في ${expensiveFlop.name.split(' ').pop()} على الفاضي؟ ده مبيجبش نقط في البلايستيشن حتى! 💸`);
+      }
+
+      const hasHaaland = active.some(p => p.name.toLowerCase().includes('haaland'));
+      const hasSalah = active.some(p => p.name.toLowerCase().includes('salah'));
+      if (!hasHaaland && !hasSalah) {
+        roasts.push("لا معاك هالاند ولا صلاح؟ إنت داخل تلعب فانتازي ولا بتلعب دوري درجة تانية؟ 🥶");
+      }
+
+      const goodBench = bench.find(p => (p.goals || 0) > 0 || (p.assists || 0) > 0);
+      if (goodBench) {
+        roasts.push(`حاطط ${goodBench.name.split(' ').pop()} على الدكة وهو بيجيب أهداف؟ جوارديولا الغلابة يا إخوانا! 🧠📉`);
+      }
+
+      if (totalPoints < 150) {
+        roasts.push("مجموع نقط فرقتك يكسف.. أنا لو جبت لعيبة من الشارع هيجيبوا نقط أكتر من كده! 💀");
+      }
+
+      if (roasts.length < 3) {
+        const randomP = active[Math.floor(Math.random() * active.length)].name.split(' ').pop();
+        roasts.push(`خطتك دي لو اعتمدت على ${randomP} هتلبس في الحيط الجولة الجاية! 🧱`);
+        roasts.push("لو جوارديولا شاف التشكيلة دي هيسيب التدريب ويفتح محل كشري 🤦‍♂️");
+        roasts.push("إنت بتبني فريق ينافس على الهبوط صح؟ اعترف! 📉");
+      }
+
+      const shuffledRoasts = roasts.sort(() => 0.5 - Math.random()).slice(0, 3);
+      
+      setRoastReport(shuffledRoasts);
       setIsRoasting(false);
     }, 1500);
   };
@@ -760,7 +810,6 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* 👈 ده شريط المقارنة المتظبط للموبايل */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div 
