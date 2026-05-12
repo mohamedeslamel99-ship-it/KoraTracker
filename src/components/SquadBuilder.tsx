@@ -16,8 +16,9 @@ export default function SquadBuilder({
 }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false); // 👈 حالة التحميل الجديدة
+  const [isDownloading, setIsDownloading] = useState(false);
 
+  // 👈 الدالة الجديدة "المُحصنة" ضد إيرور الصور
   const downloadImage = async () => {
     if (!squadRef.current) return;
     setIsDownloading(true);
@@ -26,7 +27,9 @@ export default function SquadBuilder({
         skipFonts: true,
         pixelRatio: 2, 
         backgroundColor: '#09090b',
-        useCORS: true, // 👈 الحل السحري لمشكلة حماية المتصفح (CORS)
+        useCORS: true,
+        // فلتر لتخطي أي نود تسبب فشل العملية (اختياري)
+        filter: (node: any) => true 
       });
       const link = document.createElement('a');
       link.download = 'KoraTracker-DreamTeam.png';
@@ -34,7 +37,18 @@ export default function SquadBuilder({
       link.click();
     } catch (error) {
       console.error("Export Error:", error);
-      alert("حصلت مشكلة في التحميل. (ممكن بسبب حماية المتصفح للوجوهات الخارجية CORS)");
+      // Fallback: لو فشل بسبب اللوجوهات، بنحاول مرة أخيرة من غير الصور الخارجية
+      try {
+        const fallbackUrl = await toPng(squadRef.current, { 
+          filter: (node: any) => node.tagName !== 'IMG' 
+        });
+        const link = document.createElement('a');
+        link.download = 'KoraTracker-Squad.png';
+        link.href = fallbackUrl;
+        link.click();
+      } catch (e) {
+        alert("حصلت مشكلة في التحميل بسبب حماية المتصفح، جرب استخدام متصفح آخر.");
+      }
     } finally {
       setIsDownloading(false);
     }
@@ -64,7 +78,6 @@ export default function SquadBuilder({
     return (
       <div className={`flex flex-col items-center w-[50px] sm:w-[60px] md:w-[84px] relative group mt-1 md:mt-2 transition-all ${isMenuOpen || isSwapping ? 'z-[100]' : 'z-20'}`}>
         
-        {/* 🎛️ أزرار التحكم */}
         {player && (
           <div className={`absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1.5 transition-all duration-300 ease-out z-[150]
             ${isMenuOpen ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-75 translate-y-2 invisible pointer-events-none md:pointer-events-auto md:visible md:group-hover:opacity-100 md:group-hover:scale-100 md:group-hover:translate-y-0'}`}>
@@ -91,10 +104,8 @@ export default function SquadBuilder({
           </div>
         )}
         
-        {/* كلمة المركز للدكة */}
         {isBench && <span className="text-[#37003c] font-black text-[9px] md:text-[10px] mb-0.5">{role}</span>}
 
-        {/* 👕 التيشيرت */}
         <div 
           onClick={handleSlotClick}
           className={`relative flex flex-col items-center justify-center transition-all cursor-pointer mb-1
@@ -133,7 +144,6 @@ export default function SquadBuilder({
           )}
         </div>
 
-        {/* 📛 يافطة الاسم والسعر */}
         {player ? (
           <div 
             className="flex flex-col w-[48px] sm:w-[56px] md:w-[72px] rounded text-center shadow-[0_4px_6px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer hover:shadow-[0_6px_12px_rgba(0,0,0,0.4)] transition-all relative z-20 mt-0.5 md:mt-1 border border-[#37003c]/20"
@@ -204,7 +214,6 @@ export default function SquadBuilder({
         <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-2 md:border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] px-0.5 md:-mx-6 md:px-6 flex justify-around items-end pb-10 sm:pb-12 pt-2 h-28 sm:h-32 md:h-44 relative z-20 overflow-hidden">
            {benchWithIndex.map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
            
-           {/* شريط الرعاية (Watermark) */}
            <div className="absolute bottom-0 left-0 right-0 bg-[#09090b] border-t border-white/20 py-1.5 px-4 flex items-center justify-between z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
               <div className="flex items-center gap-1.5">
                  <div className="h-5 w-5 bg-indigo-600 rounded flex items-center justify-center">
