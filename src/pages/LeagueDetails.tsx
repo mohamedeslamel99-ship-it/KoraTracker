@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
 import { Trophy, Users, Star, ArrowLeft, Loader2, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { Skeleton } from '../components/Skeleton';
+import Skeleton from '../components/Skeleton';
 
 export default function LeagueDetails() {
   const { id = 'PL' } = useParams();
