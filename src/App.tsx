@@ -11,6 +11,10 @@ import FantasyHub from './pages/FantasyHub';
 // 👈 1. استيراد كومبوننت زرار التواصل اللي عملناه
 import HireMeButton from './components/HireMeButton';
 
+// 👈 2. استيراد الصفحات الجديدة (من نحن وسياسة الخصوصية)
+import About from './pages/About';
+import Privacy from './pages/Privacy';
+
 export default function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'dark';
@@ -57,12 +61,16 @@ export default function App() {
             <Route path="/leagues/:id" element={<LeagueDetails />} />
             <Route path="/team/:id" element={<TeamDetails />} />
             <Route path="/fantasy-hub" element={<FantasyHub />} />
+            
+            {/* 👈 3. إضافة مسارات الصفحات الجديدة */}
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
           </Routes>
         </main>
         
         <Footer />
 
-        {/* 👈 2. وضعنا زرار التواصل هنا عشان يظهر بشكل دائم في أسفل الشاشة */}
+        {/* 👈 4. وضعنا زرار التواصل هنا عشان يظهر بشكل دائم في أسفل الشاشة */}
         <HireMeButton />
         
       </div>
