@@ -16,15 +16,17 @@ export default function SquadBuilder({
 }: any) {
   const squadRef = useRef<HTMLDivElement>(null);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false); // 👈 حالة التحميل الجديدة
 
   const downloadImage = async () => {
     if (!squadRef.current) return;
+    setIsDownloading(true);
     try {
-      // 👈 التعديل هنا: شيلنا cacheBust وقللنا الجودة لـ 2 عشان ميضربش إيرور في الموبايل
       const dataUrl = await toPng(squadRef.current, { 
         skipFonts: true,
         pixelRatio: 2, 
         backgroundColor: '#09090b',
+        useCORS: true, // 👈 الحل السحري لمشكلة حماية المتصفح (CORS)
       });
       const link = document.createElement('a');
       link.download = 'KoraTracker-DreamTeam.png';
@@ -32,7 +34,9 @@ export default function SquadBuilder({
       link.click();
     } catch (error) {
       console.error("Export Error:", error);
-      alert("حصلت مشكلة في التحميل. (ممكن بسبب بطء الإنترنت أو حماية اللوجوهات)");
+      alert("حصلت مشكلة في التحميل. (ممكن بسبب حماية المتصفح للوجوهات الخارجية CORS)");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -230,8 +234,8 @@ export default function SquadBuilder({
            <button onClick={(e) => { e.stopPropagation(); onAutoPick(); }} className="flex-1 bg-gradient-to-r from-blue-700 to-cyan-600 hover:from-blue-600 hover:to-cyan-500 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-cyan-400/30">
              <Wand2 size={14} className="md:w-4 md:h-4" /> Auto Pick
            </button>
-           <button onClick={(e) => { e.stopPropagation(); downloadImage(); }} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-emerald-300/30">
-             📸 Download
+           <button onClick={(e) => { e.stopPropagation(); downloadImage(); }} disabled={isDownloading} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 disabled:opacity-50 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-emerald-300/30">
+             {isDownloading ? <Loader2 size={14} className="animate-spin md:w-4 md:h-4" /> : '📸'} {isDownloading ? 'Saving...' : 'Download'}
            </button>
          </div>
       </div>
