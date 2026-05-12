@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp, RefreshCw } from 'lucide-react';
+import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp, RefreshCw, ShoppingCart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
@@ -402,13 +402,13 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 👈 هنا الدالة الجديدة بالكامل بتجيب الداتا الحقيقية
+  // 👈 هنا دالة الروست الجديدة - ذكاء اصطناعي وتحليل حقيقي
   const generateRoastReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
 
     if (active.length < 5) { 
-      alert("حط 5 لعيبة على الأقل في الملعب عشان أعرف أقصف جبهتك! 😂"); 
+      alert("حط شوية لعيبة في الملعب الأول عشان أعرف أهزأك بضمير! 😂"); 
       return; 
     }
     
@@ -423,48 +423,38 @@ export default function FantasyHub() {
       const bestPlayer = sortedByPoints[0];
       const worstPlayer = sortedByPoints[sortedByPoints.length - 1];
 
+      // تحليل الكابتن
       if (captain) {
         const capName = captain.name.split(' ').pop();
-        if (bestPlayer && captain.id !== bestPlayer.id && (bestPlayer.points || 0) > (captain.points || 0) + 15) {
-          roasts.push(`سايب ${bestPlayer.name.split(' ').pop()} المتألق ومكبتن ${capName}؟ إنت بتعاند نفسك يا كوتش! 🤦‍♂️`);
-        } else if ((captain.goals || 0) === 0 && (captain.assists || 0) === 0) {
-          roasts.push(`إنت متأكد إن ${capName} بيلعب كورة؟ ده مكبتنه وهو معملش أسيست حتى بالصدفة! 🤡`);
+        if (bestPlayer && captain.id !== bestPlayer.id && (bestPlayer.points || 0) > (captain.points || 0) + 20) {
+          roasts.push(`سايب ${bestPlayer.name.split(' ').pop()} المتألق ومكبتن لي ${capName}؟ إنت بتلعب ضد نفسك يا معلم؟ 🤡`);
+        } else if ((captain.points || 0) < 15) {
+          roasts.push(`الكابتن ${capName} ده آخره يشيل الشنط.. إنت حاطه أساسي وبشارة الكابتن كمان؟ يا خسارة الـ £${captain.price}m! 💸`);
         } else {
-          roasts.push(`اختيار ${capName} كابتن؟ واضح إنك بتضرب الودع قبل الجولة ما تبدأ! 🔮`);
+          roasts.push(`اختيار ${capName} كابتن؟ واضح إنك بتمشي ورا إحساسك، وإحساسك موديك في داهية! 🔮`);
         }
-      } else {
-        roasts.push("إنت ناسي تختار كابتن أصلاً! التشكيلة دي بتلعب على باب الله؟ 🏃‍♂️💨");
       }
 
-      if (worstPlayer && (worstPlayer.points || 0) <= 15) {
-        roasts.push(`إيه اللي مخليك مقتنع بـ ${worstPlayer.name.split(' ').pop()} أساسي؟ ده لو بيلعب لوحده مش هيجيب نقط! 😂`);
-      }
-
-      const expensiveFlop = active.find(p => parseFloat(p.price || '0') >= 8.0 && (p.goals || 0) === 0 && (p.assists || 0) === 0);
+      // تحليل الفلوس
+      const expensiveFlop = active.find(p => parseFloat(p.price || '0') >= 9.0 && (p.points || 0) < 20);
       if (expensiveFlop) {
-        roasts.push(`دافع £${expensiveFlop.price}m في ${expensiveFlop.name.split(' ').pop()} على الفاضي؟ ده مبيجبش نقط في البلايستيشن حتى! 💸`);
+        roasts.push(`دافع £${expensiveFlop.price}m في ${expensiveFlop.name.split(' ').pop()}؟ ده لو بيلعب كورة شراب في الشارع مش هياخد السعر ده! 🏃‍♂️💨`);
       }
 
-      const hasHaaland = active.some(p => p.name.toLowerCase().includes('haaland'));
-      const hasSalah = active.some(p => p.name.toLowerCase().includes('salah'));
-      if (!hasHaaland && !hasSalah) {
-        roasts.push("لا معاك هالاند ولا صلاح؟ إنت داخل تلعب فانتازي ولا بتلعب دوري درجة تانية؟ 🥶");
-      }
-
-      const goodBench = bench.find(p => (p.goals || 0) > 0 || (p.assists || 0) > 0);
+      // تحليل الدكة
+      const goodBench = bench.find(p => (p.points || 0) > 30);
       if (goodBench) {
-        roasts.push(`حاطط ${goodBench.name.split(' ').pop()} على الدكة وهو بيجيب أهداف؟ جوارديولا الغلابة يا إخوانا! 🧠📉`);
+        roasts.push(`سايب ${goodBench.name.split(' ').pop()} على الدكة وهو جايب نقط أكتر من نص الملعب بتاعك؟ عبقري يا كوتش! 🧠📉`);
       }
 
-      if (totalPoints < 150) {
-        roasts.push("مجموع نقط فرقتك يكسف.. أنا لو جبت لعيبة من الشارع هيجيبوا نقط أكتر من كده! 💀");
+      // روست عام
+      if (totalPoints < 200) {
+        roasts.push("التشكيلة دي لو لعبت ضد فريق من المحترفين في البلايستيشن هتخسر 10-0.. فوق يا بطل! 💀");
       }
 
       if (roasts.length < 3) {
-        const randomP = active[Math.floor(Math.random() * active.length)].name.split(' ').pop();
-        roasts.push(`خطتك دي لو اعتمدت على ${randomP} هتلبس في الحيط الجولة الجاية! 🧱`);
-        roasts.push("لو جوارديولا شاف التشكيلة دي هيسيب التدريب ويفتح محل كشري 🤦‍♂️");
-        roasts.push("إنت بتبني فريق ينافس على الهبوط صح؟ اعترف! 📉");
+        roasts.push("شكلك تعبت وإنت بتختار العك ده.. روح نام والجولة الجاية سيب الـ Auto-Pick يختارلك! 😴");
+        roasts.push("لو دي أحسن تشكيلة عندك، فأنا برشحلك تتابع رياضة الكروكيه أحسن بكتير! 🎾");
       }
 
       const shuffledRoasts = roasts.sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -810,6 +800,58 @@ export default function FantasyHub() {
          )}
       </section>
 
+      {/* مودالات الذكاء الاصطناعي والروست */}
+      <AnimatePresence>
+        {aiReport && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
+              <BrainCircuit className="mx-auto text-indigo-400 mb-4" size={40} />
+              <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">AI Squad Analysis</h2>
+              <div className={`my-8 p-8 rounded-[2rem] ${aiReport.ratingBg} border`}>
+                <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Squad Score</span>
+                <div className={`text-6xl font-black ${aiReport.ratingColor} mt-2`}>{aiReport.score}%</div>
+              </div>
+              <ul className="text-left space-y-3 mb-10">
+                {aiReport.strengths.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</li>))}
+                {aiReport.weaknesses.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0"/> {s}</li>))}
+              </ul>
+              <button onClick={()=>setAiReport(null)} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl">Back to Field</button>
+            </motion.div>
+          </div>
+        )}
+        
+        {roastReport && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95">
+            <motion.div initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-red-950/20 border border-red-500/30 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+              <Flame className="mx-auto text-red-500 mb-6" size={50} />
+              <h2 className="text-2xl font-black text-red-500 uppercase italic mb-8 tracking-tighter">AI Squad Roast 🤡</h2>
+              
+              <div className="space-y-4 mb-10">
+                {roastReport.map((r,i)=>(<p key={i} className="text-red-100 font-black text-lg leading-relaxed italic" dir="rtl">{r}</p>))}
+              </div>
+
+              {/* 💰 مساحة إعلانية داخل المودال لإثبات الربحية */}
+              <div className="bg-black/40 border border-red-500/20 rounded-2xl p-4 mb-8 group cursor-pointer hover:bg-black/60 transition-all overflow-hidden relative">
+                 <div className="absolute top-0 left-0 bg-red-600 text-[7px] text-white px-2 py-0.5 font-black uppercase">Sponsored</div>
+                 <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 bg-zinc-800 rounded-lg flex items-center justify-center shrink-0 border border-white/5">
+                       <ShoppingCart className="text-red-500" size={20} />
+                    </div>
+                    <div className="text-left">
+                       <h4 className="text-white text-[10px] font-black uppercase mb-1">Get your favorite team's jersey!</h4>
+                       <p className="text-zinc-500 text-[8px] leading-tight">Official Premier League kits with 10% discount using code "TRACKER".</p>
+                    </div>
+                 </div>
+                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              </div>
+
+              <button onClick={()=>setRoastReport(null)} className="w-full py-4 bg-red-600 text-white font-black rounded-2xl uppercase text-xs hover:bg-red-500 transition-all shadow-xl shadow-red-600/20">كفاية إهانة ورجعني 😂</button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* شريط المقارنة */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div 
@@ -865,6 +907,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* مودال المقارنة التفصيلي */}
       <AnimatePresence>
         {isComparisonOpen && selectedPlayers.length === 2 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -904,6 +947,7 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
+      {/* مودال التوقع */}
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
@@ -918,39 +962,6 @@ export default function FantasyHub() {
                 ))}
               </div>
               <button onClick={()=>setShowPredictorModal(false)} className="w-full mt-6 text-zinc-500 hover:text-white uppercase font-black text-[10px] tracking-widest transition-colors">Cancel</button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {aiReport && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
-              <BrainCircuit className="mx-auto text-indigo-400 mb-4" size={40} />
-              <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">AI Squad Analysis</h2>
-              <div className={`my-8 p-8 rounded-[2rem] ${aiReport.ratingBg} border`}>
-                <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Squad Score</span>
-                <div className={`text-6xl font-black ${aiReport.ratingColor} mt-2`}>{aiReport.score}%</div>
-              </div>
-              <ul className="text-left space-y-3 mb-10">
-                {aiReport.strengths.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</li>))}
-                {aiReport.weaknesses.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0"/> {s}</li>))}
-              </ul>
-              <button onClick={()=>setAiReport(null)} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl">Back to Field</button>
-            </motion.div>
-          </div>
-        )}
-        
-        {roastReport && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95">
-            <motion.div initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-red-950/20 border border-red-500/30 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-[0_0_50px_rgba(220,38,38,0.2)]">
-              <Flame className="mx-auto text-red-500 mb-6" size={50} />
-              <h2 className="text-2xl font-black text-red-500 uppercase italic mb-8 tracking-tighter">AI Squad Roast 🤡</h2>
-              <div className="space-y-4">
-                {roastReport.map((r,i)=>(<p key={i} className="text-red-100 font-black text-lg leading-relaxed italic" dir="rtl">{r}</p>))}
-              </div>
-              <button onClick={()=>setRoastReport(null)} className="mt-10 w-full py-4 bg-red-600 text-white font-black rounded-2xl uppercase text-xs hover:bg-red-500 transition-all shadow-xl shadow-red-600/20">كفاية إهانة ورجعني 😂</button>
             </motion.div>
           </div>
         )}
