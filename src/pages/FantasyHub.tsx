@@ -23,7 +23,7 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   const exactPrices: Record<string, string> = {
     'haaland': '15.0', 'salah': '12.5', 'palmer': '10.5', 'saka': '10.0', 'son heung-min': '10.0',
     'foden': '9.5', 'de bruyne': '10.5', 'watkins': '9.0', 'isak': '8.5', 'gordon': '7.5',
-    'bowen': '7.5', 'solanke': '7.5', 'ødegaard': '8.5', 'bruno fernandes': '8.5', 'luis díaz': '7.5',
+    'bowen': '7.5', 'solanke': '7.5', 'ødegaard': '8.5', 'bruno fernandes': '8.5', 'luis díاز': '7.5',
     'jota': '7.5', 'mbeumo': '7.0', 'eze': '7.0', 'havertz': '8.0', 'gabriel magalhães': '6.0',
     'van dijk': '6.0', 'alexander-arnold': '7.0', 'saliba': '6.0', 'porro': '5.5', 'trippier': '6.0',
     'ederson': '5.5', 'alisson': '5.5', 'raya': '5.5', 'donnarumma': '5.5', 'pickford': '5.0'
@@ -402,7 +402,6 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 👈 هنا دالة الروست الجديدة - ذكاء اصطناعي وتحليل حقيقي
   const generateRoastReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -421,9 +420,7 @@ export default function FantasyHub() {
       
       const sortedByPoints = [...active].sort((a, b) => (b.points || 0) - (a.points || 0));
       const bestPlayer = sortedByPoints[0];
-      const worstPlayer = sortedByPoints[sortedByPoints.length - 1];
 
-      // تحليل الكابتن
       if (captain) {
         const capName = captain.name.split(' ').pop();
         if (bestPlayer && captain.id !== bestPlayer.id && (bestPlayer.points || 0) > (captain.points || 0) + 20) {
@@ -435,19 +432,16 @@ export default function FantasyHub() {
         }
       }
 
-      // تحليل الفلوس
       const expensiveFlop = active.find(p => parseFloat(p.price || '0') >= 9.0 && (p.points || 0) < 20);
       if (expensiveFlop) {
         roasts.push(`دافع £${expensiveFlop.price}m في ${expensiveFlop.name.split(' ').pop()}؟ ده لو بيلعب كورة شراب في الشارع مش هياخد السعر ده! 🏃‍♂️💨`);
       }
 
-      // تحليل الدكة
       const goodBench = bench.find(p => (p.points || 0) > 30);
       if (goodBench) {
         roasts.push(`سايب ${goodBench.name.split(' ').pop()} على الدكة وهو جايب نقط أكتر من نص الملعب بتاعك؟ عبقري يا كوتش! 🧠📉`);
       }
 
-      // روست عام
       if (totalPoints < 200) {
         roasts.push("التشكيلة دي لو لعبت ضد فريق من المحترفين في البلايستيشن هتخسر 10-0.. فوق يا بطل! 💀");
       }
@@ -606,6 +600,12 @@ export default function FantasyHub() {
         <p className="mt-4 text-zinc-500 font-black uppercase tracking-[0.2em] text-[9px]">Global Player Intelligence</p>
       </header>
 
+      {/* الربط مع نظام الإعلانات الجديد (Adsterra) */}
+      <AdBanner 
+        type="script" 
+        adKey="f0d84c54f651cda2fa485c5a49cdb1b9" 
+      />
+
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         {!isSyncing && (
            <div className="mb-4 flex justify-center">
@@ -643,6 +643,13 @@ export default function FantasyHub() {
           </AnimatePresence>
         </div>
       </section>
+
+      {/* الربط مع إعلانات الأفلييت */}
+      <AdBanner 
+        type="affiliate"
+        href="https://www.amazon.eg/s?k=premier+league+jersey" 
+        imageUrl="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=500&auto=format&fit=crop" 
+      />
 
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8 z-30">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
@@ -731,6 +738,9 @@ export default function FantasyHub() {
            onSlotClick={handleSlotClick} 
          />
       </section>
+
+      {/* مساحة إعلانية مباشرة لدعوة الرعاة */}
+      <AdBanner type="direct" href="mailto:mohamedeslamel99@gmail.com" />
 
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl mt-8">
           <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
@@ -831,18 +841,16 @@ export default function FantasyHub() {
               </div>
 
               {/* 💰 مساحة إعلانية داخل المودال لإثبات الربحية */}
-              <div className="bg-black/40 border border-red-500/20 rounded-2xl p-4 mb-8 group cursor-pointer hover:bg-black/60 transition-all overflow-hidden relative">
-                 <div className="absolute top-0 left-0 bg-red-600 text-[7px] text-white px-2 py-0.5 font-black uppercase">Sponsored</div>
-                 <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-zinc-800 rounded-lg flex items-center justify-center shrink-0 border border-white/5">
-                       <ShoppingCart className="text-red-500" size={20} />
-                    </div>
-                    <div className="text-left">
-                       <h4 className="text-white text-[10px] font-black uppercase mb-1">Get your favorite team's jersey!</h4>
-                       <p className="text-zinc-500 text-[8px] leading-tight">Official Premier League kits with 10% discount using code "TRACKER".</p>
-                    </div>
-                 </div>
-                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              <AdBanner 
+                type="affiliate"
+                href="https://www.amazon.eg/s?k=premier+league+jersey" 
+                imageUrl="https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=500&auto=format&fit=crop" 
+                className="my-4"
+              />
+
+              {/* مساحة إضافية لدعوة الرعاة داخل المودال */}
+              <div className="mt-4 opacity-50 hover:opacity-100 transition-opacity">
+                <AdBanner type="direct" href="mailto:mohamedeslamel99@gmail.com" />
               </div>
 
               <button onClick={()=>setRoastReport(null)} className="w-full py-4 bg-red-600 text-white font-black rounded-2xl uppercase text-xs hover:bg-red-500 transition-all shadow-xl shadow-red-600/20">كفاية إهانة ورجعني 😂</button>
@@ -951,7 +959,7 @@ export default function FantasyHub() {
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] w-full max-sm shadow-2xl">
               <input type="text" placeholder="Search star player..." value={search} onChange={(e)=>setSearch(e.target.value)} className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
               <div className="mt-4 max-h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {searchResults.map(p => (
