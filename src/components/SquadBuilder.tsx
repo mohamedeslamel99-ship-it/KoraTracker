@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { X, Sparkles, Loader2, Flame, Wand2, ArrowRightLeft, Crown, TrendingUp } from 'lucide-react';
+import { X, Sparkles, Loader2, Flame, Wand2, ArrowRightLeft, Trophy } from 'lucide-react';
 
 // 👕 رسمة تيشيرت فانتازي واقعية (بديل لأيقونة Shirt العادية)
 const RealJersey = ({ className }: { className?: string }) => (
@@ -20,7 +20,12 @@ export default function SquadBuilder({
   const downloadImage = async () => {
     if (!squadRef.current) return;
     try {
-      const dataUrl = await toPng(squadRef.current, { cacheBust: true, skipFonts: true });
+      // 👈 التعديل الأول: رفع جودة الصورة وإضافة pixelRatio
+      const dataUrl = await toPng(squadRef.current, { 
+        cacheBust: true, 
+        skipFonts: true,
+        pixelRatio: 3 // جودة عالية جداً للصورة عشان السوشيال ميديا
+      });
       const link = document.createElement('a');
       link.download = 'KoraTracker-DreamTeam.png';
       link.href = dataUrl;
@@ -52,7 +57,6 @@ export default function SquadBuilder({
     const displayName = player ? (player.name.split(' ').length > 1 ? player.name.split(' ').pop() : player.name) : '';
 
     return (
-      // 👈 تعديل: تصغير عرض الخانة الأساسية على الموبايل
       <div className={`flex flex-col items-center w-[50px] sm:w-[60px] md:w-[84px] relative group mt-1 md:mt-2 transition-all ${isMenuOpen || isSwapping ? 'z-[100]' : 'z-20'}`}>
         
         {/* 🎛️ أزرار التحكم */}
@@ -94,7 +98,6 @@ export default function SquadBuilder({
         >
           {player ? (
             <div className="relative">
-              {/* 👈 تعديل: تصغير التيشيرت للموبايل */}
               <RealJersey className="w-9 h-9 sm:w-11 sm:h-11 md:w-16 md:h-16 text-white fill-white drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]" />
               
               {captainId === player.id && (
@@ -125,9 +128,7 @@ export default function SquadBuilder({
           )}
         </div>
 
-        {/* 📛 يافطة الاسم والسعر */}
         {player ? (
-          // 👈 تعديل: تصغير اليافطة للموبايل
           <div 
             className="flex flex-col w-[48px] sm:w-[56px] md:w-[72px] rounded text-center shadow-[0_4px_6px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer hover:shadow-[0_6px_12px_rgba(0,0,0,0.4)] transition-all relative z-20 mt-0.5 md:mt-1 border border-[#37003c]/20"
             onClick={(e) => { e.stopPropagation(); onSelectPlayer(player); setActiveMenu(null); }}
@@ -157,7 +158,7 @@ export default function SquadBuilder({
     <div className="flex flex-col items-center gap-4 md:gap-6 w-full p-0 md:p-4 relative z-0 font-sans" onClick={() => setActiveMenu(null)}>
       
       {/* 🏟️ الملعب */}
-      <div ref={squadRef} className="w-full max-w-[420px] bg-gradient-to-b from-[#02b34a] to-[#01963e] rounded-t-2xl relative flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden min-h-[420px] sm:min-h-[480px] md:min-h-[600px] border-x-2 md:border-x-4 border-t-2 md:border-t-4 border-[#02c753]/40 ring-1 ring-black/20">
+      <div ref={squadRef} className="w-full max-w-[420px] bg-gradient-to-b from-[#02b34a] to-[#01963e] rounded-t-2xl rounded-b-lg relative flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden min-h-[420px] sm:min-h-[480px] md:min-h-[600px] border-x-2 md:border-x-4 border-t-2 md:border-t-4 border-[#02c753]/40 ring-1 ring-black/20">
         
         {/* خطوط العشب */}
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-40 mix-blend-overlay">
@@ -180,7 +181,6 @@ export default function SquadBuilder({
             <span className="text-[6px] md:text-[10px] opacity-80">SCOUT</span>
         </div>
 
-        {/* 👈 تعديل: تقليل المسافات الطولية بين الخطوط في الموبايل */}
         <div className="flex justify-around mt-8 sm:mt-10 md:mt-12 w-full px-0.5 md:px-2 z-20 min-h-[75px] md:min-h-[105px]">
            {pitchWithIndex.filter((item: any) => item.slot.role === 'FWD').map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
@@ -195,8 +195,23 @@ export default function SquadBuilder({
         </div>
 
         {/* 🪑 دكة البدلاء */}
-        <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-2 md:border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] px-0.5 md:-mx-6 md:px-6 flex justify-around items-end pb-2 pt-2 h-24 sm:h-28 md:h-40 relative z-20">
+        {/* 👈 التعديل التاني: زودنا المساحة السفلية (pb-10) عشان ندي مساحة للرعاية */}
+        <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-2 md:border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] px-0.5 md:-mx-6 md:px-6 flex justify-around items-end pb-10 sm:pb-12 pt-2 h-28 sm:h-32 md:h-44 relative z-20 overflow-hidden">
            {benchWithIndex.map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
+           
+           {/* 🌟 التعديل التالت: شريط الرعاية (Watermark) اللي هيظهر في الصورة المتنزلة */}
+           <div className="absolute bottom-0 left-0 right-0 bg-[#09090b] border-t border-white/20 py-1.5 px-4 flex items-center justify-between z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
+              <div className="flex items-center gap-1.5">
+                 <div className="h-5 w-5 bg-indigo-600 rounded flex items-center justify-center">
+                    <Trophy size={10} className="text-white" />
+                 </div>
+                 <span className="text-[10px] md:text-xs text-white font-black italic tracking-tighter">Kora<span className="text-indigo-400">Tracker</span></span>
+              </div>
+              <div className="flex flex-col items-end">
+                 <span className="text-[6px] md:text-[7px] text-zinc-400 font-black tracking-[0.2em] uppercase">Powered By</span>
+                 <span className="text-[8px] md:text-[9px] text-emerald-400 font-black tracking-widest uppercase">AI Scout</span>
+              </div>
+           </div>
         </div>
 
       </div>
