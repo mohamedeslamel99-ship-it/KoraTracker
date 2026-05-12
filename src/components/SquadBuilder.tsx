@@ -52,45 +52,30 @@ export default function SquadBuilder({
     const displayName = player ? (player.name.split(' ').length > 1 ? player.name.split(' ').pop() : player.name) : '';
 
     return (
-      <div className={`flex flex-col items-center w-[60px] sm:w-[70px] md:w-[84px] relative group mt-1 md:mt-2 transition-all ${isMenuOpen || isSwapping ? 'z-[100]' : 'z-20'}`}>
+      // 👈 تعديل: تصغير عرض الخانة الأساسية على الموبايل
+      <div className={`flex flex-col items-center w-[50px] sm:w-[60px] md:w-[84px] relative group mt-1 md:mt-2 transition-all ${isMenuOpen || isSwapping ? 'z-[100]' : 'z-20'}`}>
         
-        {/* 🎛️ أزرار التحكم الجديدة الشيك */}
+        {/* 🎛️ أزرار التحكم */}
         {player && (
           <div className={`absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1.5 transition-all duration-300 ease-out z-[150]
             ${isMenuOpen ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-75 translate-y-2 invisible pointer-events-none md:pointer-events-auto md:visible md:group-hover:opacity-100 md:group-hover:scale-100 md:group-hover:translate-y-0'}`}>
             
-            {/* زر الكابتن */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); setCaptain(player.id); setActiveMenu(null); }} 
-              className="group/btn relative w-7 h-7 bg-zinc-900 border border-zinc-700 rounded-full flex items-center justify-center hover:bg-yellow-500 hover:border-yellow-400 hover:scale-110 shadow-lg transition-all"
-            >
+            <button onClick={(e) => { e.stopPropagation(); setCaptain(player.id); setActiveMenu(null); }} className="group/btn relative w-7 h-7 bg-zinc-900 border border-zinc-700 rounded-full flex items-center justify-center hover:bg-yellow-500 hover:border-yellow-400 hover:scale-110 shadow-lg transition-all">
                <span className="text-white font-black text-[10px] group-hover/btn:text-black">C</span>
                <span className="absolute -top-6 bg-black text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Captain</span>
             </button>
 
-            {/* زر الفايس كابتن */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); setViceCaptain(player.id); setActiveMenu(null); }} 
-              className="group/btn relative w-7 h-7 bg-zinc-800 border border-zinc-600 rounded-full flex items-center justify-center hover:bg-zinc-200 hover:border-white hover:scale-110 shadow-lg transition-all"
-            >
+            <button onClick={(e) => { e.stopPropagation(); setViceCaptain(player.id); setActiveMenu(null); }} className="group/btn relative w-7 h-7 bg-zinc-800 border border-zinc-600 rounded-full flex items-center justify-center hover:bg-zinc-200 hover:border-white hover:scale-110 shadow-lg transition-all">
                <span className="text-white font-black text-[10px] group-hover/btn:text-black">V</span>
                <span className="absolute -top-6 bg-black text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Vice</span>
             </button>
 
-            {/* زر التبديل */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); onSlotClick(index); setActiveMenu(null); }} 
-              className="group/btn relative w-7 h-7 bg-blue-600 border border-blue-500 rounded-full flex items-center justify-center hover:bg-blue-400 hover:scale-110 shadow-lg transition-all"
-            >
+            <button onClick={(e) => { e.stopPropagation(); onSlotClick(index); setActiveMenu(null); }} className="group/btn relative w-7 h-7 bg-blue-600 border border-blue-500 rounded-full flex items-center justify-center hover:bg-blue-400 hover:scale-110 shadow-lg transition-all">
                <ArrowRightLeft size={12} className="text-white" strokeWidth={3} />
                <span className="absolute -top-6 bg-black text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Swap</span>
             </button>
 
-            {/* زر الحذف */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); onRemovePlayer(index, player.id); setActiveMenu(null); }} 
-              className="group/btn relative w-7 h-7 bg-red-600 border border-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:scale-110 shadow-lg transition-all"
-            >
+            <button onClick={(e) => { e.stopPropagation(); onRemovePlayer(index, player.id); setActiveMenu(null); }} className="group/btn relative w-7 h-7 bg-red-600 border border-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:scale-110 shadow-lg transition-all">
                <X size={14} className="text-white" strokeWidth={3} />
                <span className="absolute -top-6 bg-black text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Remove</span>
             </button>
@@ -98,7 +83,7 @@ export default function SquadBuilder({
         )}
         
         {/* كلمة المركز للدكة */}
-        {isBench && <span className="text-[#37003c] font-black text-[10px] mb-1">{role}</span>}
+        {isBench && <span className="text-[#37003c] font-black text-[9px] md:text-[10px] mb-0.5">{role}</span>}
 
         {/* 👕 التيشيرت */}
         <div 
@@ -109,35 +94,32 @@ export default function SquadBuilder({
         >
           {player ? (
             <div className="relative">
-              {/* التيشيرت الأبيض الواقعي */}
-              <RealJersey className="w-11 h-11 sm:w-12 sm:h-12 md:w-16 md:h-16 text-white fill-white drop-shadow-[0_6px_8px_rgba(0,0,0,0.5)]" />
+              {/* 👈 تعديل: تصغير التيشيرت للموبايل */}
+              <RealJersey className="w-9 h-9 sm:w-11 sm:h-11 md:w-16 md:h-16 text-white fill-white drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]" />
               
-              {/* شارة الكابتن */}
               {captainId === player.id && (
-                <div className="absolute top-0 right-[-4px] md:top-[-2px] md:right-[-6px] bg-yellow-400 text-black w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-black text-[9px] md:text-[11px] border-[1.5px] border-black z-20 shadow-md transform rotate-[15deg]">
+                <div className="absolute top-0 right-[-4px] md:top-[-2px] md:right-[-6px] bg-yellow-400 text-black w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-black text-[8px] md:text-[11px] border-[1.5px] border-black z-20 shadow-md transform rotate-[15deg]">
                   C
                 </div>
               )}
               
-              {/* شارة الفايس كابتن */}
               {viceCaptainId === player.id && captainId !== player.id && (
-                <div className="absolute top-0 right-[-4px] md:top-[-2px] md:right-[-6px] bg-zinc-200 text-black w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-black text-[9px] md:text-[11px] border-[1.5px] border-black z-20 shadow-md transform -rotate-[10deg]">
+                <div className="absolute top-0 right-[-4px] md:top-[-2px] md:right-[-6px] bg-zinc-200 text-black w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-black text-[8px] md:text-[11px] border-[1.5px] border-black z-20 shadow-md transform -rotate-[10deg]">
                   V
                 </div>
               )}
               
-              {/* لوجو الفريق */}
               {player.team?.crest && (
-                <div className="absolute bottom-[-2px] right-[-6px] bg-white rounded-full p-[3px] shadow-[0_4px_6px_rgba(0,0,0,0.4)] flex items-center justify-center z-10 w-5 h-5 md:w-[26px] md:h-[26px] border border-zinc-200">
+                <div className="absolute bottom-[-2px] right-[-6px] bg-white rounded-full p-[2px] md:p-[3px] shadow-[0_3px_5px_rgba(0,0,0,0.4)] flex items-center justify-center z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-[26px] md:h-[26px] border border-zinc-200">
                    <img src={player.team.crest} className="w-full h-full object-contain drop-shadow-sm" alt="" referrerPolicy="no-referrer" />
                 </div>
               )}
             </div>
           ) : (
             <div className="relative">
-              <RealJersey className="w-11 h-11 sm:w-12 sm:h-12 md:w-16 md:h-16 text-white/20 fill-white/10 drop-shadow-none" />
+              <RealJersey className="w-9 h-9 sm:w-11 sm:h-11 md:w-16 md:h-16 text-white/20 fill-white/10 drop-shadow-none" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white/40 font-black text-[10px] md:text-xs tracking-widest">{role}</span>
+                <span className="text-white/40 font-black text-[8px] md:text-xs tracking-widest">{role}</span>
               </div>
             </div>
           )}
@@ -145,20 +127,21 @@ export default function SquadBuilder({
 
         {/* 📛 يافطة الاسم والسعر */}
         {player ? (
+          // 👈 تعديل: تصغير اليافطة للموبايل
           <div 
-            className="flex flex-col w-[56px] sm:w-[64px] md:w-[72px] rounded-md shadow-[0_4px_6px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer hover:shadow-[0_6px_12px_rgba(0,0,0,0.4)] transition-all relative z-20 mt-1 border border-[#37003c]/20"
+            className="flex flex-col w-[48px] sm:w-[56px] md:w-[72px] rounded text-center shadow-[0_4px_6px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer hover:shadow-[0_6px_12px_rgba(0,0,0,0.4)] transition-all relative z-20 mt-0.5 md:mt-1 border border-[#37003c]/20"
             onClick={(e) => { e.stopPropagation(); onSelectPlayer(player); setActiveMenu(null); }}
           >
-            <div className="bg-gradient-to-b from-[#ffffff] to-[#f0f0f0] text-[#37003c] text-[8px] md:text-[10px] font-black text-center py-[5px] px-1 truncate w-full" title={player.name}>
+            <div className="bg-gradient-to-b from-[#ffffff] to-[#f0f0f0] text-[#37003c] text-[6.5px] sm:text-[7.5px] md:text-[10px] font-black py-[3px] md:py-[5px] px-0.5 md:px-1 truncate w-full" title={player.name}>
               {displayName}
             </div>
-            <div className="bg-gradient-to-b from-[#37003c] to-[#1a001d] text-[#00ff87] text-[7.5px] md:text-[9px] font-black text-center py-[3px] px-1 w-full border-t border-[#00ff87]/20 flex justify-center items-center gap-0.5">
-              £{player.price}m
+            <div className="bg-gradient-to-b from-[#37003c] to-[#1a001d] text-[#00ff87] text-[6px] sm:text-[7px] md:text-[9px] font-black py-[2px] md:py-[3px] px-0.5 md:px-1 w-full border-t border-[#00ff87]/20">
+              £{player.price}
             </div>
           </div>
         ) : (
-          <div className="flex flex-col w-[56px] sm:w-[64px] md:w-[72px] rounded-md shadow-sm overflow-hidden opacity-60 relative z-20 mt-1">
-            <div className="bg-black/40 backdrop-blur-sm text-white/70 text-[8px] md:text-[10px] font-black text-center py-[5px] px-1 w-full uppercase border border-white/10 rounded-md">
+          <div className="flex flex-col w-[48px] sm:w-[56px] md:w-[72px] rounded shadow-sm overflow-hidden opacity-60 relative z-20 mt-0.5 md:mt-1">
+            <div className="bg-black/40 backdrop-blur-sm text-white/70 text-[7px] md:text-[10px] font-black text-center py-[3px] md:py-[5px] px-1 w-full uppercase border border-white/10 rounded">
               ADD
             </div>
           </div>
@@ -171,67 +154,67 @@ export default function SquadBuilder({
   const benchWithIndex = squad.map((slot: any, idx: number) => ({ slot, idx })).filter((item: any) => item.slot.isBench);
 
   return (
-    <div className="flex flex-col items-center gap-4 md:gap-6 w-full p-2 md:p-4 relative z-0 font-sans" onClick={() => setActiveMenu(null)}>
+    <div className="flex flex-col items-center gap-4 md:gap-6 w-full p-0 md:p-4 relative z-0 font-sans" onClick={() => setActiveMenu(null)}>
       
-      {/* 🏟️ الملعب الأخضر الكلاسيكي */}
-      <div ref={squadRef} className="w-full max-w-[420px] bg-gradient-to-b from-[#02b34a] to-[#01963e] rounded-t-2xl relative flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden min-h-[500px] md:min-h-[600px] border-x-4 border-t-4 border-[#02c753]/40 ring-1 ring-black/20">
+      {/* 🏟️ الملعب */}
+      <div ref={squadRef} className="w-full max-w-[420px] bg-gradient-to-b from-[#02b34a] to-[#01963e] rounded-t-2xl relative flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden min-h-[420px] sm:min-h-[480px] md:min-h-[600px] border-x-2 md:border-x-4 border-t-2 md:border-t-4 border-[#02c753]/40 ring-1 ring-black/20">
         
-        {/* ⚽ رسم خطوط الملعب البيضاء (بتأثير العشب) */}
+        {/* خطوط العشب */}
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-40 mix-blend-overlay">
-          {/* خطوط العشب الطولية */}
           {[...Array(10)].map((_, i) => (
             <div key={i} className={`absolute top-0 bottom-0 w-[10%] ${i % 2 === 0 ? 'bg-black/5' : 'bg-white/5'} left-[${i * 10}%]`} style={{ left: `${i * 10}%` }} />
           ))}
         </div>
 
+        {/* خطوط الملعب البيضاء */}
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-20 md:h-24 border-x-2 border-b-2 border-white/60" />
-            <div className="absolute top-20 md:top-24 left-1/2 -translate-x-1/2 w-12 h-6 md:w-16 md:h-8 border-b-2 border-x-2 rounded-b-full border-white/60" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[45%] h-16 md:h-24 border-x-2 border-b-2 border-white/60" />
+            <div className="absolute top-16 md:top-24 left-1/2 -translate-x-1/2 w-10 h-5 md:w-16 md:h-8 border-b-2 border-x-2 rounded-b-full border-white/60" />
             <div className="absolute top-[48%] left-0 w-full h-[2px] bg-white/60 -translate-y-1/2" />
-            <div className="absolute top-[48%] left-1/2 w-20 h-20 md:w-28 md:h-28 border-2 border-white/60 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute top-[48%] left-1/2 w-16 h-16 md:w-28 md:h-28 border-2 border-white/60 rounded-full -translate-x-1/2 -translate-y-1/2" />
         </div>
 
         {/* بانر الـ AI */}
-        <div className="absolute top-3 left-3 text-white font-black tracking-widest z-10 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/10 shadow-lg">
-            <span className="text-[#00ff87] text-[10px] md:text-xs"><Sparkles size={12} className="inline pb-0.5"/> AI</span>
-            <span className="text-[8px] md:text-[10px] opacity-80">SCOUT</span>
+        <div className="absolute top-2 left-2 md:top-3 md:left-3 text-white font-black tracking-widest z-10 flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-white/10 shadow-lg">
+            <span className="text-[#00ff87] text-[8px] md:text-xs"><Sparkles size={10} className="inline pb-0.5 md:w-3 md:h-3"/> AI</span>
+            <span className="text-[6px] md:text-[10px] opacity-80">SCOUT</span>
         </div>
 
-        {/* 🔄 الترتيب الصحيح: هجوم، وسط، دفاع، حارس */}
-        <div className="flex justify-around mt-10 md:mt-12 w-full px-1 md:px-2 z-20 min-h-[90px] md:min-h-[105px]">
+        {/* 👈 تعديل: تقليل المسافات الطولية بين الخطوط في الموبايل */}
+        <div className="flex justify-around mt-8 sm:mt-10 md:mt-12 w-full px-0.5 md:px-2 z-20 min-h-[75px] md:min-h-[105px]">
            {pitchWithIndex.filter((item: any) => item.slot.role === 'FWD').map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
-        <div className="flex justify-around mt-3 md:mt-5 w-full px-1 md:px-2 z-20 min-h-[90px] md:min-h-[105px]">
+        <div className="flex justify-around mt-2 sm:mt-3 md:mt-5 w-full px-0.5 md:px-2 z-20 min-h-[75px] md:min-h-[105px]">
            {pitchWithIndex.filter((item: any) => item.slot.role === 'MID').map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
-        <div className="flex justify-around mt-3 md:mt-5 w-full px-1 md:px-2 z-20 min-h-[90px] md:min-h-[105px]">
+        <div className="flex justify-around mt-2 sm:mt-3 md:mt-5 w-full px-0.5 md:px-2 z-20 min-h-[75px] md:min-h-[105px]">
            {pitchWithIndex.filter((item: any) => item.slot.role === 'DEF').map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
-        <div className="flex justify-around mt-3 md:mt-5 w-full px-1 md:px-2 z-20 min-h-[90px] md:min-h-[105px]">
+        <div className="flex justify-around mt-2 sm:mt-3 md:mt-5 w-full px-0.5 md:px-2 z-20 min-h-[75px] md:min-h-[105px]">
            {pitchWithIndex.filter((item: any) => item.slot.role === 'GK').map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
 
         {/* 🪑 دكة البدلاء */}
-        <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] -mx-1 px-1 md:-mx-6 md:px-6 flex justify-around items-end pb-4 pt-3 h-32 md:h-40 relative z-20">
+        <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-2 md:border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] px-0.5 md:-mx-6 md:px-6 flex justify-around items-end pb-2 pt-2 h-24 sm:h-28 md:h-40 relative z-20">
            {benchWithIndex.map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
         </div>
 
       </div>
 
-      <div className="flex flex-col gap-3 w-full max-w-[420px]">
-         <div className="flex gap-3 w-full">
-           <button onClick={(e) => { e.stopPropagation(); onGenerateAI(); }} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-[#37003c] to-[#5a0063] hover:from-[#4a0052] hover:to-[#6b0075] disabled:opacity-50 text-white font-black py-4 md:py-5 rounded-2xl shadow-[0_8px_15px_rgba(55,0,60,0.4)] transition-all active:scale-95 active:shadow-inner uppercase text-[10px] md:text-xs tracking-[0.2em] flex items-center justify-center gap-2 border border-[#9b00a8]/30">
-             {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} className="text-[#00ff87]" />} AI Rating
+      <div className="flex flex-col gap-2 md:gap-3 w-full max-w-[420px] px-2 md:px-0">
+         <div className="flex gap-2 md:gap-3 w-full">
+           <button onClick={(e) => { e.stopPropagation(); onGenerateAI(); }} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-[#37003c] to-[#5a0063] hover:from-[#4a0052] hover:to-[#6b0075] disabled:opacity-50 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-[#9b00a8]/30">
+             {isGeneratingAI ? <Loader2 size={14} className="animate-spin md:w-4 md:h-4" /> : <Sparkles size={14} className="text-[#00ff87] md:w-4 md:h-4" />} AI Rating
            </button>
-           <button onClick={(e) => { e.stopPropagation(); onRoastSquad(); }} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 text-white font-black py-4 md:py-5 rounded-2xl shadow-[0_8px_15px_rgba(220,38,38,0.4)] transition-all active:scale-95 active:shadow-inner uppercase text-[10px] md:text-xs tracking-[0.2em] flex items-center justify-center gap-2 border border-orange-400/30">
-             {isRoasting ? <Loader2 size={16} className="animate-spin" /> : <Flame size={16} />} Roast Me
+           <button onClick={(e) => { e.stopPropagation(); onRoastSquad(); }} disabled={isGeneratingAI || isRoasting} className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-orange-400/30">
+             {isRoasting ? <Loader2 size={14} className="animate-spin md:w-4 md:h-4" /> : <Flame size={14} className="md:w-4 md:h-4" />} Roast Me
            </button>
          </div>
-         <div className="flex gap-3 w-full">
-           <button onClick={(e) => { e.stopPropagation(); onAutoPick(); }} className="flex-1 bg-gradient-to-r from-blue-700 to-cyan-600 hover:from-blue-600 hover:to-cyan-500 text-white font-black py-4 md:py-5 rounded-2xl shadow-[0_8px_15px_rgba(29,78,216,0.4)] transition-all active:scale-95 active:shadow-inner uppercase text-[10px] md:text-xs tracking-[0.2em] flex items-center justify-center gap-2 border border-cyan-400/30">
-             <Wand2 size={16} /> Auto Pick
+         <div className="flex gap-2 md:gap-3 w-full">
+           <button onClick={(e) => { e.stopPropagation(); onAutoPick(); }} className="flex-1 bg-gradient-to-r from-blue-700 to-cyan-600 hover:from-blue-600 hover:to-cyan-500 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-cyan-400/30">
+             <Wand2 size={14} className="md:w-4 md:h-4" /> Auto Pick
            </button>
-           <button onClick={(e) => { e.stopPropagation(); downloadImage(); }} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-4 md:py-5 rounded-2xl shadow-[0_8px_15px_rgba(5,150,105,0.4)] transition-all active:scale-95 active:shadow-inner uppercase text-[10px] md:text-xs tracking-[0.2em] flex items-center justify-center gap-2 border border-emerald-300/30">
+           <button onClick={(e) => { e.stopPropagation(); downloadImage(); }} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black py-3 md:py-5 rounded-xl md:rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[9px] md:text-xs tracking-wide md:tracking-[0.2em] flex items-center justify-center gap-1.5 md:gap-2 border border-emerald-300/30">
              📸 Download
            </button>
          </div>
