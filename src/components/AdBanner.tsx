@@ -1,19 +1,14 @@
-import React from 'react';
-import { cn } from '../lib/utils';
-
-export default function AdBanner({ className }: { className?: string }) {
+const AdBanner = () => {
   return (
-    <div className={cn("w-full max-w-4xl mx-auto my-8 p-1 rounded-2xl bg-gradient-to-r from-zinc-800 to-zinc-900 border border-zinc-700/50 shadow-lg flex items-center justify-center min-h-[90px] opacity-70 hover:opacity-100 transition-all duration-300 cursor-pointer overflow-hidden relative group", className)}>
-      {/* تأثير اللمعان وقت المرور بالماوس */}
-      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-      
-      <div className="text-center relative z-10">
-        <span className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-[0.3em] font-black">Advertisement</span>
-        <p className="text-sm md:text-base font-black text-zinc-400">
-          مساحة إعلانية مميزة لرعاة المنصة
-        </p>
-        <p className="text-[10px] text-zinc-600 mt-1 font-bold">728 × 90</p>
+    <a href="رابط_الافلييت_الخاص_بك" target="_blank" rel="noreferrer" className="block w-full max-w-[728px] mx-auto my-8">
+      <div className="relative group overflow-hidden rounded-2xl border border-zinc-800 bg-[#111113]">
+        <img 
+          src="رابط_صورة_الإعلان_الاحترافية" 
+          alt="Sports Gear" 
+          className="w-full h-auto"
+        />
+        <div className="absolute top-2 right-2 bg-black/50 text-[8px] text-white px-2 py-0.5 rounded">AD</div>
       </div>
-    </div>
+    </a>
   );
-}
+};
