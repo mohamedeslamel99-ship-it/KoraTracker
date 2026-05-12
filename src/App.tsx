@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // 👈 1. استيراد هوك الترجمة
+import { useTranslation } from 'react-i18next'; 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,12 +8,14 @@ import LeagueDetails from './pages/LeagueDetails';
 import TeamDetails from './pages/TeamDetails';
 import FantasyHub from './pages/FantasyHub';
 
+// 👈 1. استيراد كومبوننت زرار التواصل اللي عملناه
+import HireMeButton from './components/HireMeButton';
+
 export default function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'dark';
   });
 
-  // 👈 2. استدعاء إعدادات الترجمة واللغة الحالية
   const { i18n } = useTranslation();
 
   useEffect(() => {
@@ -25,7 +27,6 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // 👈 3. الـ useEffect ده بيغير اتجاه الصفحة (يمين/يسار) بناءً على اللغة
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = i18n.language;
@@ -35,7 +36,6 @@ export default function App() {
     setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
   };
 
-  // 👈 4. الفنكشن اللي بتبدل بين العربي والإنجليزي
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
     i18n.changeLanguage(newLang);
@@ -43,9 +43,8 @@ export default function App() {
 
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-900 dark:text-zinc-50 selection:bg-indigo-500/30 transition-colors duration-300">
+      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#09090b] text-slate-900 dark:text-zinc-50 selection:bg-indigo-500/30 transition-colors duration-300 relative">
         
-        {/* 👈 5. باصينا فنكشن تغيير اللغة للـ Navbar عشان نربطها بالزرار */}
         <Navbar 
           theme={theme} 
           toggleTheme={toggleTheme} 
@@ -60,7 +59,12 @@ export default function App() {
             <Route path="/fantasy-hub" element={<FantasyHub />} />
           </Routes>
         </main>
+        
         <Footer />
+
+        {/* 👈 2. وضعنا زرار التواصل هنا عشان يظهر بشكل دائم في أسفل الشاشة */}
+        <HireMeButton />
+        
       </div>
     </Router>
   );
