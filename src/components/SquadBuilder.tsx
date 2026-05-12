@@ -20,18 +20,19 @@ export default function SquadBuilder({
   const downloadImage = async () => {
     if (!squadRef.current) return;
     try {
-      // 👈 التعديل الأول: رفع جودة الصورة وإضافة pixelRatio
+      // 👈 التعديل هنا: شيلنا cacheBust وقللنا الجودة لـ 2 عشان ميضربش إيرور في الموبايل
       const dataUrl = await toPng(squadRef.current, { 
-        cacheBust: true, 
         skipFonts: true,
-        pixelRatio: 3 // جودة عالية جداً للصورة عشان السوشيال ميديا
+        pixelRatio: 2, 
+        backgroundColor: '#09090b',
       });
       const link = document.createElement('a');
       link.download = 'KoraTracker-DreamTeam.png';
       link.href = dataUrl;
       link.click();
     } catch (error) {
-      alert("حصلت مشكلة في التحميل.");
+      console.error("Export Error:", error);
+      alert("حصلت مشكلة في التحميل. (ممكن بسبب بطء الإنترنت أو حماية اللوجوهات)");
     }
   };
 
@@ -128,6 +129,7 @@ export default function SquadBuilder({
           )}
         </div>
 
+        {/* 📛 يافطة الاسم والسعر */}
         {player ? (
           <div 
             className="flex flex-col w-[48px] sm:w-[56px] md:w-[72px] rounded text-center shadow-[0_4px_6px_rgba(0,0,0,0.3)] overflow-hidden cursor-pointer hover:shadow-[0_6px_12px_rgba(0,0,0,0.4)] transition-all relative z-20 mt-0.5 md:mt-1 border border-[#37003c]/20"
@@ -195,11 +197,10 @@ export default function SquadBuilder({
         </div>
 
         {/* 🪑 دكة البدلاء */}
-        {/* 👈 التعديل التاني: زودنا المساحة السفلية (pb-10) عشان ندي مساحة للرعاية */}
         <div className="mt-auto bg-gradient-to-b from-[#7fd6a0] to-[#5cb880] border-t-2 md:border-t-4 border-[#37003c]/20 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] px-0.5 md:-mx-6 md:px-6 flex justify-around items-end pb-10 sm:pb-12 pt-2 h-28 sm:h-32 md:h-44 relative z-20 overflow-hidden">
            {benchWithIndex.map((item: any) => <PlayerSlot key={item.idx} slotObj={item.slot} index={item.idx} />)}
            
-           {/* 🌟 التعديل التالت: شريط الرعاية (Watermark) اللي هيظهر في الصورة المتنزلة */}
+           {/* شريط الرعاية (Watermark) */}
            <div className="absolute bottom-0 left-0 right-0 bg-[#09090b] border-t border-white/20 py-1.5 px-4 flex items-center justify-between z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
               <div className="flex items-center gap-1.5">
                  <div className="h-5 w-5 bg-indigo-600 rounded flex items-center justify-center">
