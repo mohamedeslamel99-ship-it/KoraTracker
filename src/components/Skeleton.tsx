@@ -4,7 +4,8 @@ interface SkeletonProps {
   className?: string;
 }
 
-export function Skeleton({ className }: SkeletonProps) {
+// 👈 التعديل هنا: ضفنا كلمة default عشان ملف FantasyHub يقدر يقراه صح
+export default function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
