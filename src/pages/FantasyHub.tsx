@@ -5,11 +5,8 @@ import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Tr
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
+import Skeleton from '../components/Skeleton';
 
-// 👈 استدعاء مكون التحميل الوهمي (Skeleton)
-import Skeleton from '../components/Skeleton'; 
-
-// 🚨 خوارزمية تصنيف المراكز
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
   const pos = String(p.position || p.section || '').toLowerCase();
@@ -20,7 +17,6 @@ const getPlayerPosition = (p: any) => {
   return 'MID';
 };
 
-// 💰 محرك أسعار ونقاط الفانتازي الواقعي
 const getRealisticFPLData = (name: string, pos: string, goals: number, assists: number, id: number) => {
   const n = (name || '').toLowerCase();
   const exactPrices: Record<string, string> = {
@@ -50,7 +46,6 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
   return { price, points };
 };
 
-// ترتيب الملعب زي الفانتازي الأصلية (هجوم -> وسط -> دفاع -> حارس)
 const defaultSquadStructure = [
   { role: 'FWD', isBench: false, player: null },
   { role: 'FWD', isBench: false, player: null },
@@ -182,11 +177,10 @@ export default function FantasyHub() {
 
   const handleSearch = (term: string) => {
     if (!term) { setSearchResults([]); return; }
-    // ضمان عرض لاعبي الدوري الإنجليزي فقط
     const results = allPlayers
       .filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())))
       .slice(0, 30);
-    searchResults(results);
+    setSearchResults(results);
   };
 
   useEffect(() => {
@@ -577,7 +571,6 @@ export default function FantasyHub() {
         <p className="mt-4 text-zinc-500 font-black uppercase tracking-[0.2em] text-[9px]">Global Player Intelligence</p>
       </header>
 
-      {/* البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         {!isSyncing && (
            <div className="mb-4 flex justify-center">
@@ -616,7 +609,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* المقارنة والبيانات */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4">
           <AnimatePresence mode="wait">
@@ -654,7 +646,6 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      {/* الملعب التفاعلي */}
       <section className="flex flex-col items-center relative z-0">
          <SquadBuilder 
            squad={squad} 
@@ -675,7 +666,6 @@ export default function FantasyHub() {
          />
       </section>
 
-      {/* التوقعات */}
       <section className="bg-gradient-to-br from-indigo-900/40 to-[#09090b] rounded-[2.5rem] p-8 md:p-12 border border-indigo-500/30 text-center shadow-2xl mt-8">
           <Medal className="mx-auto text-indigo-400 mb-4" size={32} />
           <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Weekly Predictor</h2>
@@ -690,7 +680,6 @@ export default function FantasyHub() {
           )}
       </section>
 
-      {/* 👈 تعديل قسم المباريات ليستخدم Skeleton بدل الـ Spinner وقت التحميل */}
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
          <h2 className="text-xl md:text-2xl font-black text-white uppercase italic mb-10 flex items-center gap-3 relative z-10"><CalendarDays className="text-indigo-400" /> Upcoming Fixtures</h2>
@@ -743,7 +732,6 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* 👈 تعديل قسم المواهب ليستخدم Skeleton وقت مزامنة اللاعبين */}
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
@@ -775,7 +763,6 @@ export default function FantasyHub() {
          </div>
       </section>
 
-      {/* شريط المقارنة */}
       <AnimatePresence>
         {selectedPlayers.length > 0 && (
           <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-2xl px-4 py-3 md:px-6 md:py-4 rounded-3xl border border-zinc-700 bg-black/90 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
@@ -805,7 +792,6 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* نافذة المقارنة */}
       <AnimatePresence>
         {isComparisonOpen && selectedPlayers.length === 2 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -845,7 +831,6 @@ export default function FantasyHub() {
         )}
       </AnimatePresence>
 
-      {/* النوافذ التانية (الذكاء الاصطناعي والتوقع) */}
       <AnimatePresence>
         {showPredictorModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
@@ -884,7 +869,6 @@ export default function FantasyHub() {
           </div>
         )}
         
-        {/* نافذة الروست (قصف الجبهة) */}
         {roastReport && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95">
             <motion.div initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-red-950/20 border border-red-500/30 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-[0_0_50px_rgba(220,38,38,0.2)]">
