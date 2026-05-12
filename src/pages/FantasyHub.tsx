@@ -568,6 +568,7 @@ export default function FantasyHub() {
         <p className="mt-4 text-zinc-500 font-black uppercase tracking-[0.2em] text-[9px]">Global Player Intelligence</p>
       </header>
 
+      {/* 1. قسم البحث والمزامنة */}
       <section className="relative z-40 w-full max-w-2xl mx-auto">
         {!isSyncing && (
            <div className="mb-4 flex justify-center">
@@ -606,7 +607,40 @@ export default function FantasyHub() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* 2. 👈 تم نقل قسم المواهب هنا مباشرة بعد البحث */}
+      <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8 z-30">
+         <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
+         <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
+         
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+            {isSyncing || allPlayers.length === 0 ? (
+               [1, 2, 3, 4].map(i => (
+                 <div key={i} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl h-[120px] flex flex-col justify-between shadow-lg">
+                    <Skeleton className="w-1/3 h-4 rounded" />
+                    <Skeleton className="w-3/4 h-6 rounded" />
+                    <Skeleton className="w-full h-8 rounded mt-2" />
+                 </div>
+               ))
+            ) : (
+               globalProspects.map(p => (
+                 <div key={p.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer group hover:-translate-y-1 shadow-lg">
+                    <div className="flex items-center gap-2 mb-4"><img src={p.team?.crest} className="h-4 w-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity" /><span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest">{p.team?.shortName}</span></div>
+                    <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
+                    <div className="flex justify-between items-center mt-5">
+                       <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
+                       <div className="flex gap-1">
+                          <button onClick={(e)=>{e.stopPropagation(); addToComparison(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all"><Scale size={12}/></button>
+                          <button onClick={(e)=>{e.stopPropagation(); addToSquad(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all"><Plus size={12}/></button>
+                       </div>
+                    </div>
+                 </div>
+               ))
+            )}
+         </div>
+      </section>
+
+      {/* 3. قسم المقارنة والبيانات */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-8">
         <div className="lg:col-span-4">
           <AnimatePresence mode="wait">
             {activePlayer ? (
@@ -677,7 +711,7 @@ export default function FantasyHub() {
           )}
       </section>
 
-      {/* 👈 مساحة الإعلان اللي ضفناها */}
+      {/* مساحة الإعلان اللي ضفناها */}
       <AdBanner />
 
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
@@ -730,37 +764,6 @@ export default function FantasyHub() {
                ))}
             </div>
          )}
-      </section>
-
-      <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
-         <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
-         <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
-         
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-            {isSyncing || allPlayers.length === 0 ? (
-               [1, 2, 3, 4].map(i => (
-                 <div key={i} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl h-[120px] flex flex-col justify-between shadow-lg">
-                    <Skeleton className="w-1/3 h-4 rounded" />
-                    <Skeleton className="w-3/4 h-6 rounded" />
-                    <Skeleton className="w-full h-8 rounded mt-2" />
-                 </div>
-               ))
-            ) : (
-               globalProspects.map(p => (
-                 <div key={p.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer group hover:-translate-y-1 shadow-lg">
-                    <div className="flex items-center gap-2 mb-4"><img src={p.team?.crest} className="h-4 w-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity" /><span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest">{p.team?.shortName}</span></div>
-                    <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
-                    <div className="flex justify-between items-center mt-5">
-                       <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
-                       <div className="flex gap-1">
-                          <button onClick={(e)=>{e.stopPropagation(); addToComparison(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all"><Scale size={12}/></button>
-                          <button onClick={(e)=>{e.stopPropagation(); addToSquad(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all"><Plus size={12}/></button>
-                       </div>
-                    </div>
-                 </div>
-               ))
-            )}
-         </div>
       </section>
 
       <AnimatePresence>
