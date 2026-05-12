@@ -6,6 +6,9 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 
+// 👈 استدعاء مكون التحميل الوهمي (Skeleton)
+import Skeleton from '../components/Skeleton'; 
+
 // 🚨 خوارزمية تصنيف المراكز
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
@@ -183,7 +186,7 @@ export default function FantasyHub() {
     const results = allPlayers
       .filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())))
       .slice(0, 30);
-    setSearchResults(results);
+    searchResults(results);
   };
 
   useEffect(() => {
@@ -432,18 +435,13 @@ export default function FantasyHub() {
     }, 1500);
   };
 
-  // 🚀 الذكاء الاصطناعي المُحدث لاختيار اللعيبة (حصانة ضد المصابين والاحتياطيين) 🚀
   const handleAutoPick = () => {
-    
-    // 🚨 قائمة الـ Blacklist للإصابات الطويلة واللاعبين غير النشطين
     const unavailablePlayers = ['ødegaard', 'odegaard', 'rodri', 'alisson', 'frimpong', 'bates', 'sánchez'];
 
-    // 1. تصفية صارمة: لازم يكون في الدوري الإنجليزي + مش في الـ Blacklist + مساهماته عالية
     let pool = allPlayers.filter(p => {
       const name = (p.name || '').toLowerCase();
       const isUnavailable = unavailablePlayers.some(un => name.includes(un));
       const isPL = p.league === 'PL';
-      // شرط إن اللاعب يكون أساسي ومتألق: جاب أكتر من 20 نقطة أو مسجل أهداف/صانع ألعاب
       const hasGoodStats = p.points >= 20 || p.goals >= 2 || p.assists >= 2;
 
       return isPL && !isUnavailable && hasGoodStats;
@@ -454,7 +452,6 @@ export default function FantasyHub() {
     let mids = pool.filter(p => p.position === 'MID');
     let fwds = pool.filter(p => p.position === 'FWD');
 
-    // لو الـ API لسه محملش الداتا كاملة والفلتر شال لعيبة كتير، بنخفف الشروط بس بنمنع المصابين برضه
     if (gks.length < 2 || defs.length < 5 || mids.length < 5 || fwds.length < 3) {
        pool = allPlayers.filter(p => {
           const name = (p.name || '').toLowerCase();
@@ -477,7 +474,6 @@ export default function FantasyHub() {
 
     const pickRandomStrong = (playersArray: any[], count: number, teamCounts: any) => {
       const sorted = [...playersArray].sort((a, b) => calculatePlayerPower(b) - calculatePlayerPower(a));
-      // بنختار من أحسن 25 لاعب ونلخبطهم
       const topPool = sorted.slice(0, 25).sort(() => 0.5 - Math.random()); 
 
       const picked = [];
@@ -532,7 +528,6 @@ export default function FantasyHub() {
     }
   };
 
-  // 🚀 خوارزمية جلب الجولات الذكية (متجاهلة للمباريات المؤجلة القديمة) 🚀
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     
@@ -695,12 +690,21 @@ export default function FantasyHub() {
           )}
       </section>
 
-      {/* الماتشات والنتائج */}
+      {/* 👈 تعديل قسم المباريات ليستخدم Skeleton بدل الـ Spinner وقت التحميل */}
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
          <h2 className="text-xl md:text-2xl font-black text-white uppercase italic mb-10 flex items-center gap-3 relative z-10"><CalendarDays className="text-indigo-400" /> Upcoming Fixtures</h2>
          {fixturesLoading ? (
-            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+               {[1, 2, 3].map((i) => (
+                 <div key={i} className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-6 h-[250px] flex flex-col justify-around">
+                   <Skeleton className="w-1/2 h-4 mb-2 rounded" />
+                   <Skeleton className="w-full h-12 rounded-xl" />
+                   <Skeleton className="w-full h-12 rounded-xl" />
+                   <Skeleton className="w-full h-12 rounded-xl" />
+                 </div>
+               ))}
+            </div>
          ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                {upcomingGameweeks.map(gw => (
@@ -739,24 +743,35 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* المواهب */}
+      {/* 👈 تعديل قسم المواهب ليستخدم Skeleton وقت مزامنة اللاعبين */}
       <section className="bg-[#111113] border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute bottom-0 left-0 p-8 opacity-5 text-white pointer-events-none"><Star size={120} /></div>
          <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10"><div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" /> Global Prospects</h2>
+         
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
-            {globalProspects.map(p => (
-              <div key={p.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer group hover:-translate-y-1 shadow-lg">
-                 <div className="flex items-center gap-2 mb-4"><img src={p.team?.crest} className="h-4 w-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity" /><span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest">{p.team?.shortName}</span></div>
-                 <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
-                 <div className="flex justify-between items-center mt-5">
-                    <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
-                    <div className="flex gap-1">
-                       <button onClick={(e)=>{e.stopPropagation(); addToComparison(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all"><Scale size={12}/></button>
-                       <button onClick={(e)=>{e.stopPropagation(); addToSquad(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all"><Plus size={12}/></button>
+            {isSyncing || allPlayers.length === 0 ? (
+               [1, 2, 3, 4].map(i => (
+                 <div key={i} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl h-[120px] flex flex-col justify-between shadow-lg">
+                    <Skeleton className="w-1/3 h-4 rounded" />
+                    <Skeleton className="w-3/4 h-6 rounded" />
+                    <Skeleton className="w-full h-8 rounded mt-2" />
+                 </div>
+               ))
+            ) : (
+               globalProspects.map(p => (
+                 <div key={p.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-2xl hover:border-emerald-500/50 transition-all cursor-pointer group hover:-translate-y-1 shadow-lg">
+                    <div className="flex items-center gap-2 mb-4"><img src={p.team?.crest} className="h-4 w-4 object-contain opacity-50 group-hover:opacity-100 transition-opacity" /><span className="text-[8px] text-zinc-600 uppercase font-black tracking-widest">{p.team?.shortName}</span></div>
+                    <p onClick={()=>setActivePlayer(p)} className="text-xs md:text-sm font-black text-white uppercase italic truncate mb-1 group-hover:text-emerald-400 transition-colors">{p.name}</p>
+                    <div className="flex justify-between items-center mt-5">
+                       <span className="text-[9px] text-indigo-400 font-black">£{p.price}m</span>
+                       <div className="flex gap-1">
+                          <button onClick={(e)=>{e.stopPropagation(); addToComparison(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all"><Scale size={12}/></button>
+                          <button onClick={(e)=>{e.stopPropagation(); addToSquad(p);}} className="p-1.5 bg-zinc-950 rounded-lg border border-zinc-800 text-zinc-500 hover:text-white hover:bg-emerald-600 hover:border-emerald-500 transition-all"><Plus size={12}/></button>
+                       </div>
                     </div>
                  </div>
-              </div>
-            ))}
+               ))
+            )}
          </div>
       </section>
 
