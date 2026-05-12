@@ -6,6 +6,8 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
 import Skeleton from '../components/Skeleton';
+// 👈 استدعاء مساحة الإعلانات
+import AdBanner from '../components/AdBanner';
 
 const getPlayerPosition = (p: any) => {
   if (!p) return 'UNKNOWN';
@@ -403,20 +405,15 @@ export default function FantasyHub() {
 
   const generateRoastReport = () => {
     const active = squad.filter(s => !s.isBench && s.player);
-    if (active.length < 1) { alert("حط لعيبة الأول عشان أعرف أقصف جبهتك! 😂"); return; }
+    if (active.length < 1) { alert("حدد تشكيلتك أولاً"); return; }
     
     setIsRoasting(true);
 
+    // 🚨 حط جمل قصف الجبهة القديمة بتاعتك هنا 🚨
     const roasts = [
-      "تشكيلة عظيمة.. لو بتلعب في دوري المظاليم! 😂",
-      "إنت متأكد إن دي تشكيلة كورة مش فريق كبادي؟ 🤡",
-      "الذكاء الاصطناعي بيعيط من ساعة ما شاف اختياراتك.. حرام عليك! 😭",
-      "لو جوارديولا شاف التشكيلة دي هيسيب التدريب ويفتح محل كشري 🤦‍♂️",
-      "خط النص عندك أبطأ من سلحفاة حامل.. إيه ده! 🐌",
-      "أنا لو مكان اللعيبة دي هعتزل قبل ما الجولة تبدأ 🚑",
-      "دفاعك ده شوارع.. أي حد معدي هيسجل فيك! 🚦",
-      "إنت حاطط الكابتن ده بناءً على رؤية فنية ولا ضربت الودع؟ 🔮",
-      "اللعيبة دي آخرها تلعب حجز خماسي يوم الخميس، مش فانتازي! ⚽",
+      "جملة 1",
+      "جملة 2",
+      "جملة 3"
     ];
 
     setTimeout(() => {
@@ -679,6 +676,9 @@ export default function FantasyHub() {
             <button onClick={()=>setShowPredictorModal(true)} className="mt-8 bg-white text-black font-black px-10 py-4 rounded-full uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl shadow-white/5">Make Prediction</button>
           )}
       </section>
+
+      {/* 👈 مساحة الإعلان اللي ضفناها */}
+      <AdBanner />
 
       <section className="bg-zinc-900/30 border border-zinc-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden mt-8">
          <div className="absolute top-0 right-0 p-8 opacity-5 text-white pointer-events-none"><CalendarDays size={150} /></div>
