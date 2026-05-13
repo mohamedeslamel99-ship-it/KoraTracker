@@ -20,15 +20,6 @@ export default defineConfig(({mode}) => {
     },
     build: {
       chunkSizeWarningLimit: 1000,
-      // 👇 التعديل الجديد لتقسيم الملفات (Manual Chunks) لزيادة سرعة الموبايل
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            icons: ['lucide-react'],
-          },
-        },
-      },
     },
   };
 });

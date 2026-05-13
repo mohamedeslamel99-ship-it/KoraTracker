@@ -219,13 +219,7 @@ export default function Home() {
                 {/* Player 1 (Top Scorer) */}
                 <div className="flex-1 flex flex-col items-center min-w-0">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-[#1a1d24] border border-zinc-700/50 rounded-full p-3 md:p-4 mb-3 md:mb-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative">
-                    <img 
-                      src={debatePlayer1.team.crest} 
-                      className="w-full h-full object-contain" 
-                      alt="" 
-                      // @ts-ignore
-                      fetchpriority="high" // 👈 إضافة الـ Priority فقط
-                    />
+                    <img src={debatePlayer1.team.crest} className="w-full h-full object-contain" alt="" />
                     <div className="absolute -bottom-1 -right-1 md:-bottom-1 md:-right-1 bg-amber-400 text-black text-[9px] md:text-[11px] font-black w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center border-2 border-[#1a1d24] shadow-md">C</div>
                   </div>
                   <h4 className="font-black text-xs sm:text-sm md:text-lg uppercase italic truncate w-full text-center px-1 tracking-tight text-white">{debatePlayer1.name.split(' ').pop()}</h4>
@@ -242,13 +236,7 @@ export default function Home() {
                 {/* Player 2 (Runner up) */}
                 <div className="flex-1 flex flex-col items-center min-w-0">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-[#1a1d24] border border-zinc-700/50 rounded-full p-3 md:p-4 mb-3 md:mb-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative">
-                    <img 
-                      src={debatePlayer2.team.crest} 
-                      className="w-full h-full object-contain" 
-                      alt="" 
-                      // @ts-ignore
-                      fetchpriority="high" // 👈 إضافة الـ Priority فقط
-                    />
+                    <img src={debatePlayer2.team.crest} className="w-full h-full object-contain" alt="" />
                   </div>
                   <h4 className="font-black text-xs sm:text-sm md:text-lg uppercase italic truncate w-full text-center px-1 tracking-tight text-white">{debatePlayer2.name.split(' ').pop()}</h4>
                   <p className="text-emerald-400 font-black text-lg md:text-2xl mt-1 md:mt-1.5 flex items-center gap-1.5">
@@ -270,6 +258,7 @@ export default function Home() {
       </section>
 
       {/* 🟢 الإعلان الأول: تحت الهيرو مباشرة 🟢 */}
+      {/* استبدل '1234567890' برقم المساحة الخاص بك من جوجل أدسنس */}
       <AdBanner type="adsense" adKey="1234567890" />
 
       {/* Trending Market */}
@@ -292,12 +281,7 @@ export default function Home() {
               <div key={p.id} className="bg-[#111113] border border-zinc-800 rounded-2xl p-3 md:p-5 hover:border-emerald-500/50 transition-colors group relative overflow-hidden flex flex-col justify-between h-full">
                 <div className="absolute top-0 right-0 p-2 md:p-3 opacity-5 pointer-events-none"><TrendingUp size={30} className="md:w-10 md:h-10" /></div>
                 <div className="flex items-center gap-2 md:gap-3 mb-3">
-                  <img 
-                    src={p.team.crest} 
-                    className="w-5 h-5 md:w-8 md:h-8 object-contain shrink-0" 
-                    alt="" 
-                    loading="lazy" // 👈 إضافة التحميل الكسول فقط
-                  />
+                  <img src={p.team.crest} className="w-5 h-5 md:w-8 md:h-8 object-contain shrink-0" alt="" />
                   <div className="min-w-0">
                     <h4 className="font-black text-white text-[10px] md:text-sm uppercase truncate">{p.name.split(' ').pop()}</h4>
                     <p className="text-[8px] md:text-[9px] text-emerald-400 font-bold uppercase">{p.points} PTS</p>
@@ -313,6 +297,7 @@ export default function Home() {
       </section>
 
       {/* 🟢 الإعلان التاني: فاصل بين الـ Trending Market والمباريات المباشرة 🟢 */}
+      {/* تقدر تغيره لـ Adsterra لو حابب بتغيير type="script" */}
       <AdBanner type="adsense" adKey="0987654321" />
 
       {/* Live Matches Section */}
@@ -386,13 +371,7 @@ export default function Home() {
               upcomingMatches.map((match: any) => (
                 <div key={match.id} className="flex items-center justify-between border-b border-zinc-800 pb-3 md:pb-4 last:border-0 last:pb-0 group">
                   <div className="flex flex-1 items-center gap-2">
-                    <img 
-                      src={match.homeTeam.crest} 
-                      alt="" 
-                      className="h-4 w-4 md:h-6 md:w-6 object-contain shrink-0" 
-                      referrerPolicy="no-referrer" 
-                      loading="lazy" // 👈 إضافة التحميل الكسول
-                    />
+                    <img src={match.homeTeam.crest} alt="" className="h-4 w-4 md:h-6 md:w-6 object-contain shrink-0" referrerPolicy="no-referrer" />
                     <span className="text-[9px] md:text-xs font-bold text-zinc-300 truncate uppercase tracking-tight">{match.homeTeam.shortName || match.homeTeam.name.substring(0,3)}</span>
                   </div>
                   <div className="flex flex-col items-center px-2 shrink-0">
@@ -402,13 +381,7 @@ export default function Home() {
                   </div>
                   <div className="flex flex-1 items-center justify-end gap-2 text-right">
                     <span className="text-[9px] md:text-xs font-bold text-zinc-300 truncate uppercase tracking-tight">{match.awayTeam.shortName || match.awayTeam.name.substring(0,3)}</span>
-                    <img 
-                      src={match.awayTeam.crest} 
-                      alt="" 
-                      className="h-4 w-4 md:h-6 md:w-6 object-contain shrink-0" 
-                      referrerPolicy="no-referrer" 
-                      loading="lazy" // 👈 إضافة التحميل الكسول
-                    />
+                    <img src={match.awayTeam.crest} alt="" className="h-4 w-4 md:h-6 md:w-6 object-contain shrink-0" referrerPolicy="no-referrer" />
                   </div>
                 </div>
               ))
