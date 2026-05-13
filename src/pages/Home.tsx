@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
 import MatchCard from '../components/MatchCard';
+import AdBanner from '../components/AdBanner'; // 👈 تم إضافة استدعاء الإعلان هنا
 import { Trophy, Calendar, Loader2, ArrowRight, BrainCircuit, Flame, Swords, Plus, TrendingUp, X, Activity, MapPin, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -256,6 +257,10 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* 🟢 الإعلان الأول: تحت الهيرو مباشرة 🟢 */}
+      {/* استبدل '1234567890' برقم المساحة الخاص بك من جوجل أدسنس */}
+      <AdBanner type="adsense" adKey="1234567890" />
+
       {/* Trending Market */}
       <section className="mx-4 sm:mx-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5 md:mb-6 pl-1 md:pl-2">
@@ -290,6 +295,10 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* 🟢 الإعلان التاني: فاصل بين الـ Trending Market والمباريات المباشرة 🟢 */}
+      {/* تقدر تغيره لـ Adsterra لو حابب بتغيير type="script" */}
+      <AdBanner type="adsense" adKey="0987654321" />
 
       {/* Live Matches Section */}
       <section className="mx-4 sm:mx-6">

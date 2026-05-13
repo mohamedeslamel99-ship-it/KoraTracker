@@ -3,17 +3,25 @@ import { cn } from '../lib/utils';
 
 interface AdBannerProps {
   className?: string;
-  type?: 'script' | 'affiliate' | 'direct';
-  adKey?: string;      // خاص بـ Adsterra
+  type?: 'script' | 'affiliate' | 'direct' | 'adsense'; // تم إضافة 'adsense'
+  adKey?: string;      // خاص بـ Adsterra (أو الـ Slot ID الخاص بـ AdSense)
   href?: string;       // رابط الأفلييت أو الإعلان المباشر
   imageUrl?: string;   // صورة المنتج (للأفلييت)
+  dataAdClient?: string; // (اختياري) رقم حساب أدسنس الخاص بك
 }
 
-export default function AdBanner({ className, type = 'script', adKey, href, imageUrl }: AdBannerProps) {
+export default function AdBanner({ 
+  className, 
+  type = 'script', 
+  adKey, 
+  href, 
+  imageUrl,
+  dataAdClient = 'ca-pub-XXXXXXXXXXXXXXXX' // استبدل ده برقم حسابك الافتراضي
+}: AdBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
+  // 1. Effect الخاص بـ Adsterra
   useEffect(() => {
-    // تشغيل سكريبت Adsterra فقط لو النوع 'script'
     if (type === 'script' && adKey && bannerRef.current && !bannerRef.current.firstChild) {
       const atOptions = {
         'key': adKey,
@@ -30,8 +38,21 @@ export default function AdBanner({ className, type = 'script', adKey, href, imag
     }
   }, [type, adKey]);
 
+  // 2. Effect الخاص بـ Google AdSense
+  useEffect(() => {
+    if (type === 'adsense') {
+      try {
+        // @ts-ignore
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch (err) {
+        console.error('AdSense error:', err);
+      }
+    }
+  }, [type]);
+
   return (
     <div className={cn("w-full flex flex-col items-center my-8 px-4", className)}>
+      
       {/* 1. حالة الأفلييت أو الإعلان المباشر */}
       {(type === 'affiliate' || type === 'direct') && href ? (
         <a 
@@ -54,8 +75,31 @@ export default function AdBanner({ className, type = 'script', adKey, href, imag
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
           <span className="absolute top-1 right-2 bg-black/60 text-[7px] text-zinc-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">AD</span>
         </a>
+      ) : type === 'adsense' ? (
+        
+        // 2. حالة Google AdSense
+        <div className="w-full max-w-[728px] min-h-[90px] bg-zinc-900/50 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+          {adKey ? (
+            <ins
+              className="adsbygoogle w-full z-10"
+              style={{ display: 'block' }}
+              data-ad-client={dataAdClient}
+              data-ad-slot={adKey} // استخدمنا adKey عشان نمرر رقم مساحة أدسنس
+              data-ad-format="auto"
+              data-full-width-responsive="true"
+            ></ins>
+          ) : (
+             <span className="text-zinc-600 text-[10px] font-black uppercase tracking-widest z-0">AdSense Missing Key</span>
+          )}
+          {/* Placeholder خلفي */}
+          <span className="absolute text-zinc-600/50 text-[10px] font-black uppercase tracking-widest z-0">
+            Google AdSpace
+          </span>
+        </div>
+
       ) : (
-        // 2. حالة Adsterra (السكريبت)
+        
+        // 3. حالة Adsterra (السكريبت)
         <div 
           ref={bannerRef}
           className="w-full max-w-[728px] min-h-[90px] bg-zinc-900/50 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden"
@@ -66,7 +110,11 @@ export default function AdBanner({ className, type = 'script', adKey, href, imag
 
       {/* بادج توضيحي للمشتري */}
       <p className="mt-3 text-[8px] text-zinc-600 font-black uppercase tracking-[0.3em]">
-        Inventory Slot: {type === 'script' ? 'Network API' : type === 'affiliate' ? 'Affiliate Partner' : 'Direct Sponsor'}
+        Inventory Slot: {
+          type === 'script' ? 'Network API' : 
+          type === 'adsense' ? 'Google AdSense' : 
+          type === 'affiliate' ? 'Affiliate Partner' : 'Direct Sponsor'
+        }
       </p>
     </div>
   );
