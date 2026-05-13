@@ -3,11 +3,11 @@ import { cn } from '../lib/utils';
 
 interface AdBannerProps {
   className?: string;
-  type?: 'script' | 'affiliate' | 'direct' | 'adsense'; // تم إضافة 'adsense'
-  adKey?: string;      // خاص بـ Adsterra (أو الـ Slot ID الخاص بـ AdSense)
-  href?: string;       // رابط الأفلييت أو الإعلان المباشر
-  imageUrl?: string;   // صورة المنتج (للأفلييت)
-  dataAdClient?: string; // (اختياري) رقم حساب أدسنس الخاص بك
+  type?: 'script' | 'affiliate' | 'direct' | 'adsense'; 
+  adKey?: string;      
+  href?: string;       
+  imageUrl?: string;   
+  dataAdClient?: string; 
 }
 
 export default function AdBanner({ 
@@ -16,7 +16,7 @@ export default function AdBanner({
   adKey, 
   href, 
   imageUrl,
-  dataAdClient = 'ca-pub-3938735407425269' // 👈 تم التعديل هنا برقم حسابك الحقيقي
+  dataAdClient = 'ca-pub-3938735407425269' 
 }: AdBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
@@ -59,12 +59,16 @@ export default function AdBanner({
           href={href} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="w-full max-w-[728px] group relative overflow-hidden rounded-2xl border border-zinc-800 hover:border-indigo-500/50 transition-all shadow-xl"
+          className="w-full max-w-[728px] min-h-[90px] group relative overflow-hidden rounded-2xl border border-zinc-800 hover:border-indigo-500/50 transition-all shadow-xl"
         >
           {imageUrl ? (
-            <img src={imageUrl} alt="Ad" className="w-full h-[90px] object-cover" />
+            <img 
+              src={imageUrl} 
+              alt="Ad" 
+              className="w-full h-[90px] object-cover" 
+              loading="lazy" 
+            />
           ) : (
-            // شكل الإعلان المباشر (Advertise Here)
             <div className="w-full h-[90px] bg-gradient-to-r from-indigo-900/20 to-zinc-900 flex items-center justify-center text-center p-4">
               <div>
                 <p className="text-white font-black uppercase italic text-sm md:text-base tracking-tighter">مساحة إعلانية مميزة لرعاة المنصة</p>
@@ -77,21 +81,20 @@ export default function AdBanner({
         </a>
       ) : type === 'adsense' ? (
         
-        // 2. حالة Google AdSense
-        <div className="w-full max-w-[728px] min-h-[90px] bg-zinc-900/50 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+        // 2. حالة Google AdSense - تم إضافة min-height لمنع الـ Layout Shift
+        <div className="w-full max-w-[728px] min-h-[90px] md:min-h-[280px] bg-zinc-900/50 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden relative">
           {adKey ? (
             <ins
               className="adsbygoogle w-full z-10"
-              style={{ display: 'block' }}
+              style={{ display: 'block', minHeight: '90px' }}
               data-ad-client={dataAdClient}
-              data-ad-slot={adKey} // استخدمنا adKey عشان نمرر رقم مساحة أدسنس
+              data-ad-slot={adKey}
               data-ad-format="auto"
               data-full-width-responsive="true"
             ></ins>
           ) : (
              <span className="text-zinc-600 text-[10px] font-black uppercase tracking-widest z-0">AdSense Missing Key</span>
           )}
-          {/* Placeholder خلفي */}
           <span className="absolute text-zinc-600/50 text-[10px] font-black uppercase tracking-widest z-0">
             Google AdSpace
           </span>
