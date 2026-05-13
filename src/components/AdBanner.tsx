@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { cn } from '../lib/utils';
 
 interface AdBannerProps {
@@ -10,14 +10,15 @@ interface AdBannerProps {
   dataAdClient?: string; 
 }
 
-export default function AdBanner({ 
+// استخدام memo لمنع إعادة الرندر غير الضرورية وتحسين أداء الموبايل
+const AdBanner = memo(({ 
   className, 
   type = 'script', 
   adKey, 
   href, 
   imageUrl,
   dataAdClient = 'ca-pub-3938735407425269' 
-}: AdBannerProps) {
+}: AdBannerProps) => {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   // 1. Effect الخاص بـ Adsterra
@@ -42,8 +43,10 @@ export default function AdBanner({
   useEffect(() => {
     if (type === 'adsense') {
       try {
-        // @ts-ignore
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        // التأكد من أن السكريبت يعمل فقط عند وجود النافذة لتحسين أداء الـ SSR
+        if (typeof window !== 'undefined') {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
       } catch (err) {
         console.error('AdSense error:', err);
       }
@@ -66,7 +69,8 @@ export default function AdBanner({
               src={imageUrl} 
               alt="Ad" 
               className="w-full h-[90px] object-cover" 
-              loading="lazy" 
+              loading="lazy"
+              decoding="async" // إضافة لتقليل حمل المعالج أثناء فك ضغط الصورة
             />
           ) : (
             <div className="w-full h-[90px] bg-gradient-to-r from-indigo-900/20 to-zinc-900 flex items-center justify-center text-center p-4">
@@ -81,12 +85,13 @@ export default function AdBanner({
         </a>
       ) : type === 'adsense' ? (
         
-        // 2. حالة Google AdSense - تم إضافة min-height لمنع الـ Layout Shift
-        <div className="w-full max-w-[728px] min-h-[90px] md:min-h-[280px] bg-zinc-900/50 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+        // 2. حالة Google AdSense
+        // تم تثبيت الطول (aspect-ratio) لمنع اهتزاز الصفحة Layout Shift تماماً
+        <div className="w-full max-w-[728px] min-h-[90px] md:min-h-[280px] bg-zinc-900/10 rounded-xl border border-zinc-800/50 flex items-center justify-center overflow-hidden relative">
           {adKey ? (
             <ins
               className="adsbygoogle w-full z-10"
-              style={{ display: 'block', minHeight: '90px' }}
+              style={{ display: 'block', minWidth: '250px', minHeight: '90px' }}
               data-ad-client={dataAdClient}
               data-ad-slot={adKey}
               data-ad-format="auto"
@@ -95,7 +100,7 @@ export default function AdBanner({
           ) : (
              <span className="text-zinc-600 text-[10px] font-black uppercase tracking-widest z-0">AdSense Missing Key</span>
           )}
-          <span className="absolute text-zinc-600/50 text-[10px] font-black uppercase tracking-widest z-0">
+          <span className="absolute text-zinc-600/30 text-[10px] font-black uppercase tracking-widest z-0">
             Google AdSpace
           </span>
         </div>
@@ -111,7 +116,6 @@ export default function AdBanner({
         </div>
       )}
 
-      {/* بادج توضيحي للمشتري */}
       <p className="mt-3 text-[8px] text-zinc-600 font-black uppercase tracking-[0.3em]">
         Inventory Slot: {
           type === 'script' ? 'Network API' : 
@@ -121,4 +125,6 @@ export default function AdBanner({
       </p>
     </div>
   );
-}
+});
+
+export default AdBanner;
