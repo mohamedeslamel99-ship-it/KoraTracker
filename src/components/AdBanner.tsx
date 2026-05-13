@@ -16,7 +16,7 @@ export default function AdBanner({
   adKey, 
   href, 
   imageUrl,
-  dataAdClient = 'ca-pub-XXXXXXXXXXXXXXXX' // استبدل ده برقم حسابك الافتراضي
+  dataAdClient = 'ca-pub-3938735407425269' // 👈 تم التعديل هنا برقم حسابك الحقيقي
 }: AdBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
 
