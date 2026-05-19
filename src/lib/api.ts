@@ -1,7 +1,12 @@
-const BASE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/api/football` : '/api/football';
+// --- الكود القديم جداً (تم إيقافه) ---
+// const BASE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/api/football` : '/api/football';
+// const API_KEY = import.meta.env.VITE_FOOTBALL_DATA_API_KEY;
 
-// سحب المفتاح السري من بيئة العمل
-const API_KEY = import.meta.env.VITE_FOOTBALL_DATA_API_KEY;
+// --- كود سيرفر لارافيل (تم إيقافه) ---
+// const BASE_URL = 'http://127.0.0.1:8000/api/football';
+
+// --- الكود الجديد (الربط بسيرفر Vercel) ---
+const BASE_URL = '/api/football';
 
 export async function fetchFootballData(endpoint: string, retries = 0): Promise<any> {
   const MAX_RETRIES = 2;
@@ -10,12 +15,15 @@ export async function fetchFootballData(endpoint: string, retries = 0): Promise<
   try {
     const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}/${endpoint}`;
     
-    // إضافة الـ Headers اللي فيها المفتاح السري
-    response = await fetch(url, {
-      headers: {
-        'X-Auth-Token': API_KEY || '', // لو المفتاح مش موجود هيبعت فاضي عشان الكود ما يضربش
-      }
-    });
+    // --- الكود القديم (كان بيبعت المفتاح من الفرونت إند) ---
+    // response = await fetch(url, {
+    //   headers: {
+    //     'X-Auth-Token': API_KEY || '', 
+    //   }
+    // });
+    
+    // --- الكود الجديد (بنجيب الداتا مباشرة من غير مفاتيح) ---
+    response = await fetch(url);
     
     // Automatic exponential backoff for rate limits (429)
     if (response.status === 429 && retries < MAX_RETRIES) {
@@ -55,7 +63,7 @@ export async function fetchFootballData(endpoint: string, retries = 0): Promise<
     }
     // Explicitly check for fetch failure
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Connection Error: Could not connect to KoraTracker server. Is it running on port 3000?`);
+      throw new Error(`Connection Error: Could not connect to KoraTracker server. Is it running on port 8000?`);
     }
     throw error;
   }
