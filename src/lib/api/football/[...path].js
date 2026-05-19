@@ -6,11 +6,11 @@ export default async function handler(req, res) {
   // اللينك الأصلي بتاع موقع الكورة
   const targetUrl = `https://api.football-data.org/v4/${pathString}`;
 
-  try {
-    // بنكلم موقع الكورة ونبعتله المفتاح السري اللي هنخبيه في Vercel
+ try {
     const response = await fetch(targetUrl, {
       headers: {
-        'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY,
+        // حطينا المفتاح هنا مباشرة للتجربة
+        'X-Auth-Token': '94ad2c35b69c48629558d4f91f65d9e0',
       },
     });
 
