@@ -8,7 +8,12 @@ const resources = {
       "Home": "Home",
       "Leagues": "Leagues",
       "Fantasy Hub": "Fantasy Hub",
-      "switch_lang": "عربي"
+      "switch_lang": "عربي",
+      "heroTitle": "AI Analytics for Your Squad",
+      "masterSquad": "Master Your Fantasy Squad",
+      "quickAdd": "Quick Add",
+      "starOfTheWeek": "Star of the Week",
+      "launchHub": "Launch Fantasy Hub"
     }
   },
   ar: {
@@ -17,7 +22,12 @@ const resources = {
       "Home": "الرئيسية",
       "Leagues": "الدوريات",
       "Fantasy Hub": "فانتسي هاب",
-      "switch_lang": "English"
+      "switch_lang": "English",
+      "heroTitle": "حلل تشكيلتك بالذكاء الاصطناعي",
+      "masterSquad": "تحكم في تشكيلتك",
+      "quickAdd": "إضافة سريعة",
+      "starOfTheWeek": "نجم الجولة",
+      "launchHub": "ابدأ التحليل الآن"
     }
   }
 };

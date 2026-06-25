@@ -22,3 +22,14 @@ export function formatTime(dateString: string) {
     minute: '2-digit',
   }).format(date);
 }
+
+export const formatArabicGoals = (count: number | string): string => {
+  const number = Number(count);
+
+  if (number === 1) return "هدف واحد";
+  if (number === 2) return "هدفين";
+  if (number >= 3 && number <= 10) return `${number} أهداف`;
+  if (number >= 11 && number <= 99) return `${number} هدفاً`;
+  
+  return `${number} هدف`; 
+};
