@@ -13,7 +13,10 @@ const resources = {
       "masterSquad": "Master Your Fantasy Squad",
       "quickAdd": "Quick Add",
       "starOfTheWeek": "Star of the Week",
-      "launchHub": "Launch Fantasy Hub"
+      "launchHub": "Launch Fantasy Hub",
+      // الكلمات الجديدة اللي ضفناها
+      "beatDeadline": "BEAT THE DEADLINE. LAUNCH FANTASY HUB NOW!",
+      "poweredByAPI": "POWERED BY API"
     }
   },
   ar: {
@@ -27,7 +30,10 @@ const resources = {
       "masterSquad": "تحكم في تشكيلتك",
       "quickAdd": "إضافة سريعة",
       "starOfTheWeek": "نجم الجولة",
-      "launchHub": "ابدأ التحليل الآن"
+      "launchHub": "ابدأ التحليل الآن",
+      // الكلمات الجديدة اللي ضفناها
+      "beatDeadline": "سابق الزمن. ابدأ التحليل الآن",
+      "poweredByAPI": "مدعوم من واجهة برمجة التطبيقات"
     }
   }
 };

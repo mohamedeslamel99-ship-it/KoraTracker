@@ -7,6 +7,7 @@ import { Trophy, Calendar, Loader2, ArrowRight, BrainCircuit, Flame, Swords, Plu
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next'; // 👈 إضافة مكتبة الترجمة
 
 // 🚨 خوارزمية أسعار ونقاط الفانتازي الواقعية (بديلة للأرقام العشوائية)
 const getRealisticFPLData = (name: string, pos: string, goals: number, assists: number, id: number) => {
@@ -38,6 +39,8 @@ const getRealisticFPLData = (name: string, pos: string, goals: number, assists: 
 };
 
 export default function Home() {
+  const { t } = useTranslation(); // 👈 استدعاء دالة الترجمة
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const { data: liveData, error: liveError, isLoading: liveLoading } = useSWR(endpoints.getLiveMatches(), fetchFootballData, { refreshInterval: 15000 });
@@ -105,10 +108,11 @@ export default function Home() {
       news.push("🔄 جاري مزامنة أحدث إحصائيات الدوري الإنجليزي الممتاز...");
     }
 
-    news.push("⚡ BEAT THE DEADLINE. LAUNCH FANTASY HUB NOW! ⚡");
+    // 👈 استخدام الترجمة هنا للشريط المتحرك
+    news.push(`⚡ ${t('beatDeadline', 'BEAT THE DEADLINE. LAUNCH FANTASY HUB NOW!')} ⚡`);
     
     return news;
-  }, [liveMatches, topPlayers, upcomingMatches]);
+  }, [liveMatches, topPlayers, upcomingMatches, t]);
 
   const handleQuickAdd = (player: any) => {
     const currentSquad = JSON.parse(localStorage.getItem('kt_saved_squad') || JSON.stringify(Array(15).fill(null)));
@@ -191,17 +195,21 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-600/20 blur-[80px] md:blur-[120px] rounded-full pointer-events-none" />
         
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative z-10 max-w-4xl px-2 md:px-4 w-full flex flex-col items-center">
+          
+          {/* 👈 تعديل الترجمة للشارة هنا */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-indigo-400 text-[9px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-8 shadow-2xl">
-            <BrainCircuit size={12} className="md:w-3.5 md:h-3.5" /> Powered by API
+            <BrainCircuit size={12} className="md:w-3.5 md:h-3.5" /> {t('poweredByAPI', 'POWERED BY API')}
           </div>
           
+          {/* 👈 تعديل الترجمة للعنوان الكبير هنا مع الحفاظ على التدرج اللوني */}
           <h1 className="text-[2.5rem] leading-[0.9] sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter mb-4">
-            Master Your <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Fantasy Squad</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">
+              {t('masterSquad')}
+            </span>
           </h1>
           
           <p className="text-zinc-400 text-[9px] sm:text-xs md:text-sm font-bold uppercase tracking-widest max-w-xl mb-6 md:mb-8 px-4 leading-relaxed">
-            حلل تشكيلتك بالذكاء الاصطناعي، راقب تغيرات الأسعار لحظة بلحظة، وتفوق في دوري الفانتازي الخاص بك.
+            {t('heroTitle', 'حلل تشكيلتك بالذكاء الاصطناعي، راقب تغيرات الأسعار لحظة بلحظة، وتفوق في دوري الفانتازي الخاص بك.')}
           </p>
 
           {/* 🌟 Captaincy Debate Card - 100% Real API Data 🌟 */}
@@ -251,14 +259,14 @@ export default function Home() {
 
           <div className="flex flex-col items-center w-full gap-4 mt-2">
             <Link to="/fantasy-hub" className="inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-indigo-600 to-emerald-600 text-white font-black px-8 md:px-12 py-3.5 md:py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_30px_rgba(79,70,229,0.4)] uppercase tracking-[0.2em] text-[9px] md:text-[12px] w-[90%] sm:w-auto">
-              Launch Fantasy Hub <ArrowRight size={14} className="md:w-4 md:h-4" />
+              {/* 👈 تعديل الترجمة لزر الذهاب لصفحة الفانتازي هنا */}
+              {t('launchHub')} <ArrowRight size={14} className="md:w-4 md:h-4" />
             </Link>
           </div>
         </motion.div>
       </section>
 
       {/* 🟢 الإعلان الأول: تحت الهيرو مباشرة 🟢 */}
-      {/* استبدل '1234567890' برقم المساحة الخاص بك من جوجل أدسنس */}
       <AdBanner type="adsense" adKey="1234567890" />
 
       {/* Trending Market */}
@@ -297,7 +305,6 @@ export default function Home() {
       </section>
 
       {/* 🟢 الإعلان التاني: فاصل بين الـ Trending Market والمباريات المباشرة 🟢 */}
-      {/* تقدر تغيره لـ Adsterra لو حابب بتغيير type="script" */}
       <AdBanner type="adsense" adKey="0987654321" />
 
       {/* Live Matches Section */}
