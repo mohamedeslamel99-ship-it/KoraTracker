@@ -120,7 +120,9 @@ export default function FantasyHub() {
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
-  const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
+  
+  // 👈 التعديل الأول: استخدام endpoints.getMatches() بدلاً من الرابط المباشر
+  const { data: fixturesData, isLoading: fixturesLoading } = useSWR(endpoints.getMatches(), fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { 
     try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } 
@@ -181,7 +183,7 @@ export default function FantasyHub() {
     const results = allPlayers
       .filter(p => p.league === 'PL' && (p.name?.toLowerCase().includes(term.toLowerCase()) || p.team?.name?.toLowerCase().includes(term.toLowerCase())))
       .slice(0, 30);
-    searchResults(results);
+    setSearchResults(results);
   };
 
   useEffect(() => {
@@ -312,7 +314,6 @@ export default function FantasyHub() {
     }
   };
 
-  // التعديل الأول: جعل الذكاء الاصطناعي يعرض Dashboard بدلاً من التقييم القديم لإظهار القيمة للعميل
   const generateAIReport = () => {
     const active = squad.filter(s => !s.isBench && s.player).map(s => s.player);
     const bench = squad.filter(s => s.isBench && s.player).map(s => s.player);
@@ -348,7 +349,6 @@ export default function FantasyHub() {
         score: finalScore, 
         strengths, 
         weaknesses,
-        // بيانات وهمية للتبديلات لإظهار قوة ميزة الـ AI للمستثمرين
         transferOut: active[active.length - 1] || { name: 'Player X', price: '5.0' },
         transferIn: { name: 'Palmer (CHE)', price: '10.5' },
         ratingColor: "text-emerald-400", 
@@ -508,10 +508,16 @@ export default function FantasyHub() {
     }
   };
 
+  // 👈 التعديل الثاني: فلترة المباريات القادمة لتشمل مباريات الدوري الإنجليزي فقط
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     
-    const grouped = fixturesData.matches.reduce((acc: any, m: any) => { 
+    // الفلترة
+    const plMatches = fixturesData.matches.filter((m: any) => 
+      m.competition?.code === 'PL' || m.competition?.id === 2021 || m.league?.id === 39
+    );
+
+    const grouped = plMatches.reduce((acc: any, m: any) => { 
       if (!m.matchday) return acc;
       if (!acc[m.matchday]) acc[m.matchday] = []; 
       acc[m.matchday].push(m); 
@@ -767,7 +773,7 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* التعديل: مودال الـ Dashboard الذكي (AI Analytics) بدلاً من التقرير النصي العادي */}
+      {/* مودال الـ Dashboard الذكي (AI Analytics) بدلاً من التقرير النصي العادي */}
       <AnimatePresence>
         {aiReport && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
