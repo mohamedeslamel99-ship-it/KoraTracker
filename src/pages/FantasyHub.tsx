@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import { fetchFootballData, endpoints } from '../lib/api';
-import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp, TrendingDown, ArrowRight, ShieldCheck, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Search, Scale, Zap, Info, X, Loader2, Star, Ghost, Clock, BarChart3, Trash2, Crown, Share2, Plus, BrainCircuit, CheckCircle2, AlertTriangle, CalendarDays, Timer, Flame, Target, Medal, Wand2, TrendingUp, RefreshCw, ShoppingCart } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import SquadBuilder from '../components/SquadBuilder';
@@ -120,9 +120,7 @@ export default function FantasyHub() {
   const { data: teamsData } = useSWR(endpoints.getTeams('PL'), fetchFootballData, { revalidateOnFocus: false });
   const teams = teamsData?.teams || [];
   const { data: plScorers } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
-  
-  // 👈 التعديل الأول: استخدام endpoints.getMatches() بدلاً من الرابط المباشر
-  const { data: fixturesData, isLoading: fixturesLoading } = useSWR(endpoints.getMatches(), fetchFootballData, { revalidateOnFocus: false });
+  const { data: fixturesData, isLoading: fixturesLoading } = useSWR('competitions/PL/matches', fetchFootballData, { revalidateOnFocus: false });
 
   const [leaguePlayers, setLeaguePlayers] = useState<any[]>(() => { 
     try { const saved = localStorage.getItem('kt_players_db'); return saved ? JSON.parse(saved) : []; } catch { return []; } 
@@ -323,10 +321,15 @@ export default function FantasyHub() {
     setIsGeneratingAI(true);
 
     setTimeout(() => {
+      const totalGoals = active.reduce((sum, p) => sum + (p.goals || 0), 0);
       const totalPoints = active.reduce((sum, p) => sum + (p.points || 0), 0);
       const totalCost = active.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0) + bench.reduce((sum, p) => sum + parseFloat(p.price || '0'), 0);
       
+      const defPoints = active.filter(p => p.position === 'DEF' || p.position === 'GK').reduce((sum, p) => sum + (p.points || 0), 0);
+      const attPoints = active.filter(p => p.position === 'FWD' || p.position === 'MID').reduce((sum, p) => sum + (p.points || 0), 0);
+
       const bestPlayer = [...active].sort((a, b) => (b.points || 0) - (a.points || 0))[0];
+      const bestFwd = active.filter(p => p.position === 'FWD').sort((a,b) => (b.goals || 0) - (a.goals || 0))[0];
       const captainPlayer = active.find(p => p.id === captainId);
       const isCaptainBest = captainId === bestPlayer?.id;
 
@@ -341,18 +344,58 @@ export default function FantasyHub() {
       const strengths = [];
       const weaknesses = [];
 
-      strengths.push(`تحليل الأداء المتوقع لجولتك القادمة (GW Next): نقاط تقديرية جيدة بناءً على xG و xA للاعبين الأساسيين.`);
-      if (isCaptainBest) strengths.push(`اختيار مثالي للكابتن.`);
-      weaknesses.push(`تحتاج لتبديل ${active[1]?.name?.split(' ')?.pop() || 'أحد اللاعبين'} لمواجهته لخصم صعب.`);
+      if (totalGoals > 50) {
+        strengths.push(bestFwd ? `خط هجوم ضارب بقيادة الهداف ${bestFwd.name.split(' ').pop()}.` : `معدل تهديفي ممتاز للتشكيلة (${totalGoals} هدف).`);
+      } else {
+        weaknesses.push(`عقم تهديفي: التشكيلة الأساسية مسجلة ${totalGoals} هدف بس! محتاج مهاجمين أشرس.`);
+      }
+
+      if (defPoints > attPoints * 0.6) {
+        strengths.push(`دفاعك صلب وبيجمع نقط ممتازة جداً مقارنة بخط الهجوم.`);
+      } else if (defPoints < 150) {
+        weaknesses.push(`خط الدفاع شوارع وبيخسر نقط كتير، ركز على لعيبة بتجيب Clean Sheets.`);
+      }
+
+      if (totalCost > 100.5) {
+        weaknesses.push(`ميزانيتك تخطت الـ 100 مليون (£${totalCost.toFixed(1)}m)! ده مش قانوني في الفانتازي لازم تبيع حد غالي.`);
+      } else if (totalCost < 90) {
+        weaknesses.push(`إنت سايب فلوس كتير في البنك (£${(100 - totalCost).toFixed(1)}m)، استثمرها في كابتن قوي.`);
+      } else {
+        strengths.push(`إدارة الميزانية ممتازة جداً ومحسوبة بالمللي (£${totalCost.toFixed(1)}m).`);
+      }
+
+      if (captainPlayer) {
+        if (isCaptainBest) {
+          strengths.push(`اختيار الكابتن (${captainPlayer.name.split(' ').pop()}) مثالي ومبني على أعلى إحصائيات.`);
+        } else {
+          weaknesses.push(`مضيع نقط الكابتنة على ${captainPlayer.name.split(' ').pop()}.. الأفضل تكبتن ${bestPlayer?.name.split(' ').pop()}.`);
+        }
+      }
+
+      if (bench.length < 4) {
+        weaknesses.push(`دكة البدلاء بتاعتك مش كاملة، لو لاعب اتصاب أو قعد احتياطي هتلبس في الحيط.`);
+      }
+
+      strengths.sort(() => 0.5 - Math.random());
+      weaknesses.sort(() => 0.5 - Math.random());
+
+      let ratingColor = "text-emerald-400";
+      let ratingBg = "bg-emerald-500/10 border-emerald-500/30";
+
+      if (finalScore < 50) {
+        ratingColor = "text-red-500";
+        ratingBg = "bg-red-500/10 border-red-500/30";
+      } else if (finalScore < 75) {
+        ratingColor = "text-yellow-400";
+        ratingBg = "bg-yellow-500/10 border-yellow-500/30";
+      }
 
       setAiReport({ 
         score: finalScore, 
-        strengths, 
-        weaknesses,
-        transferOut: active[active.length - 1] || { name: 'Player X', price: '5.0' },
-        transferIn: { name: 'Palmer (CHE)', price: '10.5' },
-        ratingColor: "text-emerald-400", 
-        ratingBg: "bg-emerald-500/10 border-emerald-500/30"
+        strengths: strengths.slice(0, 3), 
+        weaknesses: weaknesses.slice(0, 2),
+        ratingColor, 
+        ratingBg
       });
       
       setIsGeneratingAI(false);
@@ -508,16 +551,10 @@ export default function FantasyHub() {
     }
   };
 
-  // 👈 التعديل الثاني: فلترة المباريات القادمة لتشمل مباريات الدوري الإنجليزي فقط
   const upcomingGameweeks = useMemo(() => {
     if (!fixturesData?.matches) return [];
     
-    // الفلترة
-    const plMatches = fixturesData.matches.filter((m: any) => 
-      m.competition?.code === 'PL' || m.competition?.id === 2021 || m.league?.id === 39
-    );
-
-    const grouped = plMatches.reduce((acc: any, m: any) => { 
+    const grouped = fixturesData.matches.reduce((acc: any, m: any) => { 
       if (!m.matchday) return acc;
       if (!acc[m.matchday]) acc[m.matchday] = []; 
       acc[m.matchday].push(m); 
@@ -773,52 +810,22 @@ export default function FantasyHub() {
          )}
       </section>
 
-      {/* مودال الـ Dashboard الذكي (AI Analytics) بدلاً من التقرير النصي العادي */}
+      {/* مودالات الذكاء الاصطناعي والروست */}
       <AnimatePresence>
         {aiReport && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
-            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-6 md:p-10 rounded-[2.5rem] w-full max-w-2xl text-center shadow-[0_0_80px_rgba(99,102,241,0.15)] relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-indigo-500 to-emerald-400" />
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
               <BrainCircuit className="mx-auto text-indigo-400 mb-4" size={40} />
-              <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">AI Analysis Dashboard</h2>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 mb-6">Powered by Machine Learning</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                 <div className={`p-6 rounded-[2rem] ${aiReport.ratingBg} border flex flex-col justify-center`}>
-                    <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Predicted Score</span>
-                    <div className={`text-5xl font-black ${aiReport.ratingColor} mt-2`}>{aiReport.score} <span className="text-xl text-zinc-500">PTS</span></div>
-                 </div>
-                 
-                 <div className="bg-[#111113] border border-zinc-800 rounded-[2rem] p-4 text-left">
-                    <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3 flex items-center gap-2"><Zap className="text-amber-400" size={14}/> Transfer Suggestions</h3>
-                    
-                    <div className="space-y-2">
-                       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex justify-between items-center">
-                          <div>
-                             <p className="text-[8px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1"><TrendingDown size={10}/> Transfer Out</p>
-                             <p className="text-white font-bold text-sm mt-0.5">{aiReport.transferOut?.name?.split(' ').pop()}</p>
-                          </div>
-                          <span className="text-zinc-400 text-xs font-bold">£{aiReport.transferOut?.price}m</span>
-                       </div>
-
-                       <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex justify-between items-center">
-                          <div>
-                             <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1"><TrendingUp size={10}/> Transfer In</p>
-                             <p className="text-white font-bold text-sm mt-0.5">{aiReport.transferIn?.name}</p>
-                          </div>
-                          <span className="text-zinc-400 text-xs font-bold">£{aiReport.transferIn?.price}m</span>
-                       </div>
-                    </div>
-                 </div>
+              <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">AI Squad Analysis</h2>
+              <div className={`my-8 p-8 rounded-[2rem] ${aiReport.ratingBg} border`}>
+                <span className="text-[10px] text-zinc-400 uppercase font-black tracking-[0.2em]">Squad Score</span>
+                <div className={`text-6xl font-black ${aiReport.ratingColor} mt-2`}>{aiReport.score}%</div>
               </div>
-
-              <div className="text-left space-y-3 mb-8 bg-black/50 p-6 rounded-[2rem] border border-zinc-800/50">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Summary</h4>
-                {aiReport.strengths.map((s:string, i:number)=>(<p key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</p>))}
-                {aiReport.weaknesses.map((s:string, i:number)=>(<p key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0"/> {s}</p>))}
-              </div>
-
-              <button onClick={()=>setAiReport(null)} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl">Back to Squad Manager</button>
+              <ul className="text-left space-y-3 mb-10">
+                {aiReport.strengths.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0"/> {s}</li>))}
+                {aiReport.weaknesses.map((s:string, i:number)=>(<li key={i} className="text-xs font-bold text-zinc-300 flex items-start gap-3"><AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0"/> {s}</li>))}
+              </ul>
+              <button onClick={()=>setAiReport(null)} className="w-full py-4 bg-white text-black font-black rounded-2xl uppercase text-xs hover:bg-indigo-400 hover:text-white transition-all shadow-xl">Back to Field</button>
             </motion.div>
           </div>
         )}

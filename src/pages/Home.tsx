@@ -47,17 +47,8 @@ export default function Home() {
   const { data: fixturesData, error: fixturesError, isLoading: fixturesLoading } = useSWR(endpoints.getMatches(), fetchFootballData);
   const { data: plScorers, isLoading: scorersLoading } = useSWR(endpoints.getTopScorers('PL'), fetchFootballData, { revalidateOnFocus: false });
 
-  // 👈 التعديل الأول: فلترة المباريات المباشرة لتشمل الدوري الإنجليزي فقط
-  const liveMatches = liveData?.matches?.filter((m: any) => 
-    m.competition?.code === 'PL' || m.competition?.id === 2021 || m.league?.id === 39
-  ) || [];
-
-  // 👈 التعديل الثاني: فلترة المباريات القادمة لتشمل الدوري الإنجليزي فقط
-  const upcomingMatches = fixturesData?.matches?.filter((m: any) => 
-    (m.status === 'TIMED' || m.status === 'SCHEDULED') && 
-    (m.competition?.code === 'PL' || m.competition?.id === 2021 || m.league?.id === 39)
-  ).slice(0, 8) || [];
-
+  const liveMatches = liveData?.matches || [];
+  const upcomingMatches = fixturesData?.matches?.filter((m: any) => m.status === 'TIMED' || m.status === 'SCHEDULED').slice(0, 8) || [];
   const isRateLimited = liveError?.message?.includes('request limit') || fixturesError?.message?.includes('request limit');
 
   const [selectedLiveMatch, setSelectedLiveMatch] = useState<any>(null);
@@ -437,52 +428,6 @@ export default function Home() {
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 👈 التعديل الثالث: قسم بيع الكود المصدري للمستثمرين (Project Acquisition) */}
-      <section className="mx-4 sm:mx-6 mt-12 mb-8">
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-[#111113] to-[#111113] border border-indigo-500/30 rounded-[2rem] md:rounded-[40px] p-8 md:p-12 shadow-2xl text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8 group">
-          {/* تأثير الإضاءة الخلفية */}
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-indigo-500/20 transition-all duration-500" />
-          
-          <div className="relative z-10 flex-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full mb-4 border border-emerald-500/20">
-              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span>
-              Project For Sale / الاستحواذ متاح
-            </div>
-            
-            <h2 className="text-3xl md:text-4xl font-black text-white uppercase italic tracking-tight mb-4">
-              Own The <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Kora Tracker</span> Source Code
-            </h2>
-            
-            <p className="text-zinc-400 text-xs md:text-sm max-w-xl leading-relaxed mb-6">
-              منصة فانتازي متكاملة وجاهزة للإطلاق. مبنية بأحدث التقنيات (React, Vite, Tailwind)، تدعم اللغتين (i18n)، ومجهزة بمساحات إعلانية (AdSense/Adsterra) لبدء جني الأرباح فوراً.
-            </p>
-            
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              {['React 18', 'Tailwind CSS', 'API Integration', 'Monetization Ready'].map((feature, idx) => (
-                <span key={idx} className="bg-zinc-900/80 border border-zinc-700/50 text-zinc-300 text-[10px] md:text-xs px-3 py-1.5 rounded-lg font-bold">
-                  ✓ {feature}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative z-10 shrink-0 w-full md:w-auto">
-            {/* ضع الرابط الخاص بك لـ Flippa أو LinkedIn أو رقم الواتساب هنا */}
-            <a 
-              href="https://linkedin.com/in/mohamed-eslam-el99" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full md:w-auto bg-white text-black hover:bg-zinc-200 transition-colors font-black px-8 py-4 rounded-2xl uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 duration-300"
-            >
-              Acquire Project Now 🚀
-            </a>
-            <p className="text-center mt-3 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-              Contact Developer directly
-            </p>
           </div>
         </div>
       </section>
